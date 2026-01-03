@@ -1,0 +1,92 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Build output
+/bin/
+/dist/
+/build/
+
+# Environment variables
+.env
+.envrc
+.env.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with secrets (be specific)
+config/prod.yaml
+config/secrets.yaml
+
+# Temporary files
+/tmp/
+*.tmp
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Air live reload (if using)
+tmp/
+
+# Coverage reports
+coverage.txt
+coverage.html
+*.cover
+
+# Profiling data
+*.prof
+cpu.prof
+mem.prof
+
+# Compiled object files
+*.o
+*.a
+
+# Debug files
+debug
+__debug_bin
+
+# Local development databases
+*.local.db
+postgres-data/
+mysql-data/
+
+# SSL/TLS certificates (if storing locally)
+*.pem
+*.key
+*.crt
+
+# Documentation builds
+/docs/_build/
