@@ -1,0 +1,24 @@
+services:
+  gopherfeed-db:
+    image: postgres:latest
+    container_name: gopherfeed-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=gopherfeed
+    ports:
+      - "5432:5432"
+    volumes:
+      - gopherfeed-data:/var/lib/postgresql:rw
+      - ./scripts/db_init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - gopherfeed-network
+
+networks:
+  gopherfeed-network:
+    name: gopherfeed-network
+    driver: bridge
+
+volumes:
+  gopherfeed-data:
+    name: gopherfeed-data
