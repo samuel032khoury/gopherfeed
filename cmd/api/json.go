@@ -5,10 +5,12 @@ import (
 	"net/http"
 )
 
-func writeJSON(w http.ResponseWriter, data any, status int) error {
+func writeJSON(w http.ResponseWriter, data any, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		writeJSONError(w, "the server encountered an error", http.StatusInternalServerError)
+	}
 }
 
 func readJSON(w http.ResponseWriter, r *http.Request, data any) error {
@@ -19,12 +21,12 @@ func readJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	return decoder.Decode(data)
 }
 
-func writeJSONError(w http.ResponseWriter, message string, status int) error {
+func writeJSONError(w http.ResponseWriter, message string, status int) {
 	type errorResponse struct {
 		Error string `json:"error"`
 	}
 	data := errorResponse{
 		Error: message,
 	}
-	return writeJSON(w, &data, status)
+	writeJSON(w, &data, status)
 }

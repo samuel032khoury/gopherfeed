@@ -17,7 +17,7 @@ type CreatePostDTO struct {
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostDTO
 	if err := readJSON(w, r, &payload); err != nil {
-		writeJSONError(w, err.Error(), http.StatusBadRequest)
+		app.badRequestError(w, r, err)
 		return
 	}
 	userId := 1 // placeholder until we have authentication
@@ -29,13 +29,10 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 	ctx := r.Context()
 	if err := app.store.Posts.Create(ctx, post); err != nil {
-		writeJSONError(w, "failed to create post: "+err.Error(), http.StatusInternalServerError)
+		app.internalServerError(w, r, err)
 		return
 	}
-	if err := writeJSON(w, post, http.StatusCreated); err != nil {
-		writeJSONError(w, "failed to write response", http.StatusInternalServerError)
-		return
-	}
+	writeJSON(w, post, http.StatusCreated)
 
 }
 
@@ -43,21 +40,18 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	postIDParam := chi.URLParam(r, "postID")
 	postID, err := strconv.ParseInt(postIDParam, 10, 64)
 	if err != nil {
-		writeJSONError(w, "invalid post ID", http.StatusBadRequest)
+		app.badRequestError(w, r, err)
 		return
 	}
 	ctx := r.Context()
 	post, err := app.store.Posts.GetByID(ctx, postID)
 	if err != nil {
-		writeJSONError(w, "failed to get post: "+err.Error(), http.StatusInternalServerError)
+		app.internalServerError(w, r, err)
 		return
 	}
 	if post == nil {
-		writeJSONError(w, "post not found", http.StatusNotFound)
+		app.notFoundError(w, r, err)
 		return
 	}
-	if err := writeJSON(w, post, http.StatusOK); err != nil {
-		writeJSONError(w, "failed to write response", http.StatusInternalServerError)
-		return
-	}
+	writeJSON(w, post, http.StatusOK)
 }
