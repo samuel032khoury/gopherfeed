@@ -90,3 +90,6 @@ mysql-data/
 
 # Documentation builds
 /docs/_build/
+
+# HTTP request
+*.http
