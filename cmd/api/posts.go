@@ -30,7 +30,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		app.badRequestError(w, r, err)
 		return
 	}
-	userId := 1 // placeholder until we have authentication
+	userId := 1 // TODO: get authenticated user ID
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
