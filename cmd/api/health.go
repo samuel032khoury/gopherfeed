@@ -8,5 +8,5 @@ func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Reques
 		"env":     app.config.env,
 		"version": version,
 	}
-	writeJSON(w, data, http.StatusOK)
+	app.jsonResponse(w, data, http.StatusOK)
 }
