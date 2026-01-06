@@ -11,3 +11,7 @@ migrate-up:
 .PHONY: migrate-down
 migrate-down:
 	@goose -dir $(MIGRATION_DIR) postgres "$$DB_URL" down
+
+.PHONY: seed
+seed:
+	@go run cmd/migrate/seed/main.go
