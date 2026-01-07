@@ -102,23 +102,28 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	).Scan(&post.UpdatedAt, &post.Version)
 }
 
-func (s *PostStore) GetFeed(ctx context.Context, userID int64) ([]*FeedablePost, error) {
+func (s *PostStore) GetFeed(ctx context.Context, userID int64, params *PaginationParams) ([]*FeedablePost, error) {
 	query := `
 		SELECT p.id, p.title, p.content, p.user_id, p.tags, p.created_at, p.updated_at, p.version, u.username,
 		       COUNT(c.id) AS comments_count
 		FROM posts p
 		LEFT JOIN comments c ON p.id = c.post_id
 		LEFT JOIN users u ON p.user_id = u.id
-		WHERE p.user_id = $1 OR p.user_id IN (
+		WHERE (p.user_id = $1 OR p.user_id IN (
 			SELECT followee_id FROM followers WHERE user_id = $1
-		)
+		))
+		AND (p.title ILIKE $2 OR p.content ILIKE $2)
+		AND (p.tags @> $3 OR $3 = '{}')
+		AND ($4 = '' OR p.created_at >= $4::timestamp)
+		AND ($5 = '' OR p.created_at <= $5::timestamp)
 		GROUP BY p.id, u.username
-		ORDER BY p.created_at DESC
-		LIMIT 100
+		ORDER BY p.created_at ` + params.Sort + `
+		LIMIT $6 OFFSET $7
 	`
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
-	rows, err := s.db.QueryContext(ctx, query, userID)
+	searchTerm := "%" + params.Search + "%"
+	rows, err := s.db.QueryContext(ctx, query, userID, searchTerm, pq.Array(params.Tags), params.Since, params.Until, params.Limit, params.Offset)
 	if err != nil {
 		return nil, err
 	}
