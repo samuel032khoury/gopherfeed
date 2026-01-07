@@ -19,22 +19,22 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
-	followerUser := getUserFromContext(r)
+	followee := getUserFromContext(r)
 
 	var userId int64 = 1 // TODO: get authenticated user ID
 
-	if err := app.store.Followers.Follow(r.Context(), userId, followerUser.ID); err != nil {
+	if err := app.store.Followers.Follow(r.Context(), userId, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	followerUser := getUserFromContext(r)
+	followee := getUserFromContext(r)
 
 	var userId int64 = 1 // TODO: get authenticated user ID
 
-	if err := app.store.Followers.Unfollow(r.Context(), userId, followerUser.ID); err != nil {
+	if err := app.store.Followers.Unfollow(r.Context(), userId, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
