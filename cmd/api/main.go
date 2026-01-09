@@ -6,6 +6,7 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/db"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
+	"go.uber.org/zap"
 )
 
 const version = "0.0.1"
@@ -37,6 +38,10 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 	}
+
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
 	db, err := db.New(
 		cfg.db.url,
 		cfg.db.maxOpenConns,
@@ -47,13 +52,14 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	log.Println("database connection pool established")
+	logger.Info("database connection pool established")
 	store := store.NewPostgresStorage(db)
 
 	app := &application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 	mux := app.mount()
-	log.Fatal(app.run(mux))
+	logger.Fatal(app.run(mux))
 }
