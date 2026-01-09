@@ -37,6 +37,11 @@ definitions:
       data:
         $ref: '#/definitions/store.User'
     type: object
+  main.DataResponse-string:
+    properties:
+      data:
+        type: string
+    type: object
   main.ErrorResponse:
     description: Error response format
     properties:
@@ -65,6 +70,27 @@ definitions:
     required:
     - content
     - title
+    type: object
+  main.authPayload:
+    description: Authentication payload
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password123
+        maxLength: 72
+        minLength: 8
+        type: string
+      username:
+        example: johndoe
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
     type: object
   map_string_string:
     additionalProperties:
@@ -195,6 +221,70 @@ info:
   termsOfService: http://swagger.io/terms/
   title: GopherFeed API
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return a token
+      parameters:
+      - description: User login payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.authPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication token
+          schema:
+            $ref: '#/definitions/main.DataResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: User registration payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.authPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/main.DataResponse-store_User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
   /feeds:
     get:
       consumes:

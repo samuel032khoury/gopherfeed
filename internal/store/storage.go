@@ -19,8 +19,9 @@ type Storage struct {
 		GetFeed(context.Context, int64, *PaginationParams) ([]*FeedablePost, error)
 	}
 	Users interface {
-		Create(context.Context, *User) error
+		Create(context.Context, *sql.Tx, *User) error
 		GetByID(context.Context, int64) (*User, error)
+		Register(context.Context, *User, string, time.Duration) error
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]*Comment, error)
@@ -39,4 +40,16 @@ func NewPostgresStorage(db *sql.DB) *Storage {
 		Comments:  &CommentStore{db: db},
 		Followers: &FollowerStore{db: db},
 	}
+}
+
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	if err := fn(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }

@@ -70,6 +70,11 @@ func (app *application) mount() http.Handler {
 		r.Route("/feeds", func(r chi.Router) {
 			r.Get("/", app.getFeedHandler)
 		})
+
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", app.registerUserHandler)
+			r.Post("/login", app.loginUserHandler)
+		})
 	})
 	return r
 }
