@@ -5,12 +5,15 @@ import (
 	"database/sql"
 )
 
+// User represents a user in the system
+//
+//	@Description	User account information
 type User struct {
-	ID        int64  `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
+	ID        int64  `json:"id" example:"1"`
+	Username  string `json:"username" example:"john_doe"`
+	Email     string `json:"email" example:"john@example.com"`
 	Password  string `json:"-"`
-	CreatedAt string `json:"created_at"`
+	CreatedAt string `json:"created_at" example:"2026-01-06T07:22:18Z"`
 }
 
 type UserStore struct {

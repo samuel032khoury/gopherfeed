@@ -7,22 +7,28 @@ import (
 	"github.com/lib/pq"
 )
 
+// Post represents a blog post
+//
+//	@Description	Blog post information
 type Post struct {
-	ID        int64      `json:"id"`
-	Title     string     `json:"title"`
-	Content   string     `json:"content"`
-	UserID    int64      `json:"user_id"`
-	Tags      []string   `json:"tags"`
-	CreatedAt string     `json:"created_at"`
-	UpdatedAt string     `json:"updated_at"`
-	Version   int        `json:"version"`
+	ID        int64      `json:"id" example:"1"`
+	Title     string     `json:"title" example:"My First Post"`
+	Content   string     `json:"content" example:"This is the content of my first post"`
+	UserID    int64      `json:"user_id" example:"1"`
+	Tags      []string   `json:"tags" example:"golang,api"`
+	CreatedAt string     `json:"created_at" example:"2026-01-06T07:22:18Z"`
+	UpdatedAt string     `json:"updated_at" example:"2026-01-06T07:22:18Z"`
+	Version   int        `json:"version" example:"1"`
 	Comments  []*Comment `json:"comments"`
 }
 
+// FeedablePost represents a post with additional feed-specific data
+//
+//	@Description	Post with user and comment count information for feeds
 type FeedablePost struct {
 	Post
-	CommentsCount int    `json:"comments_count"`
-	Username      string `json:"username"`
+	CommentsCount int    `json:"comments_count" example:"5"`
+	Username      string `json:"username" example:"john_doe"`
 }
 
 type PostStore struct {

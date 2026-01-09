@@ -14,12 +14,28 @@ type postKey string
 
 const postKeyCtx postKey = "post"
 
+// PostDTO represents the payload for creating or updating a post
+//
+//	@Description	Post creation/update payload
 type PostDTO struct {
-	Title   string   `json:"title" validate:"required,max=100"`
-	Content string   `json:"content" validate:"required,max=2000"`
-	Tags    []string `json:"tags"`
+	Title   string   `json:"title" validate:"required,max=100" example:"My First Post"`
+	Content string   `json:"content" validate:"required,max=2000" example:"This is the content of my post"`
+	Tags    []string `json:"tags" example:"golang,api"`
 }
 
+// CreatePost godoc
+//
+//	@Summary		Create a post
+//	@Description	Create a new post
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			post	body		PostDTO						true	"Post payload"
+//	@Success		201		{object}	DataResponse[store.Post]	"Post created successfully"
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		ApiKeyAuth
+//	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload PostDTO
 	if err := readJSON(w, r, &payload); err != nil {
@@ -46,6 +62,20 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 }
 
+// GetPost godoc
+//
+//	@Summary		Get a post
+//	@Description	Get a post by its unique ID with comments
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int	true	"Post ID"
+//	@Success		200		{object}	DataResponse[store.Post]
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [get]
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r)
 	comments, err := app.store.Comments.GetByPostID(r.Context(), post.ID)
@@ -57,6 +87,20 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	app.jsonResponse(w, post, http.StatusOK)
 }
 
+// DeletePost godoc
+//
+//	@Summary		Delete a post
+//	@Description	Delete a post by its unique ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int		true	"Post ID"
+//	@Success		204		{string}	string	"Post deleted successfully"
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	postID := getPostFromContext(r).ID
 	if err := app.store.Posts.Delete(r.Context(), postID); err != nil {
@@ -66,6 +110,22 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UpdatePost godoc
+//
+//	@Summary		Update a post
+//	@Description	Update a post by its unique ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int		true	"Post ID"
+//	@Param			post	body		PostDTO	true	"Post payload"
+//	@Success		200		{string}	string	"Post updated successfully"
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		409		{object}	ErrorResponse	"Edit conflict"
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [put]
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r)
 	var payload PostDTO

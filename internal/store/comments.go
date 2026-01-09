@@ -5,12 +5,15 @@ import (
 	"database/sql"
 )
 
+// Comment represents a comment on a post
+//
+//	@Description	Comment information
 type Comment struct {
-	ID        int64  `json:"id"`
-	PostID    int64  `json:"post_id"`
-	UserID    int64  `json:"user_id"`
-	Content   string `json:"content"`
-	CreatedAt string `json:"created_at"`
+	ID        int64  `json:"id" example:"1"`
+	PostID    int64  `json:"post_id" example:"1"`
+	UserID    int64  `json:"user_id" example:"2"`
+	Content   string `json:"content" example:"Great post!"`
+	CreatedAt string `json:"created_at" example:"2026-01-06T07:22:18Z"`
 }
 
 type CommentStore struct {
