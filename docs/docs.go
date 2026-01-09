@@ -24,6 +24,52 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/activate": {
+            "post": {
+                "description": "Activate a user account using the provided token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Activate a user account",
+                "parameters": [
+                    {
+                        "description": "Activation token",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.tokenDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Account activated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/main.DataResponse-main_activateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticate a user and return a token",
@@ -52,7 +98,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Authentication token",
                         "schema": {
-                            "$ref": "#/definitions/main.DataResponse-string"
+                            "$ref": "#/definitions/main.DataResponse-main_loginResponse"
                         }
                     },
                     "400": {
@@ -229,9 +275,9 @@ const docTemplate = `{
                 "summary": "Health check",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Application is healthy",
                         "schema": {
-                            "$ref": "#/definitions/main.DataResponse-map_string_string"
+                            "$ref": "#/definitions/main.DataResponse-main_healthResponse"
                         }
                     },
                     "500": {
@@ -385,10 +431,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Post updated successfully",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Post updated successfully"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -444,10 +487,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Post deleted successfully",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Post deleted successfully"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -502,7 +542,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.CreateCommentDTO"
+                            "$ref": "#/definitions/main.CommentDTO"
                         }
                     }
                 ],
@@ -695,7 +735,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.CreateCommentDTO": {
+        "main.CommentDTO": {
             "description": "Comment creation payload",
             "type": "object",
             "required": [
@@ -720,11 +760,27 @@ const docTemplate = `{
                 }
             }
         },
-        "main.DataResponse-map_string_string": {
+        "main.DataResponse-main_activateResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/map_string_string"
+                    "$ref": "#/definitions/main.activateResponse"
+                }
+            }
+        },
+        "main.DataResponse-main_healthResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/main.healthResponse"
+                }
+            }
+        },
+        "main.DataResponse-main_loginResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/main.loginResponse"
                 }
             }
         },
@@ -749,14 +805,6 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/store.User"
-                }
-            }
-        },
-        "main.DataResponse-string": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "string"
                 }
             }
         },
@@ -800,6 +848,16 @@ const docTemplate = `{
                 }
             }
         },
+        "main.activateResponse": {
+            "description": "Account activation response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Account activated successfully"
+                }
+            }
+        },
         "main.authPayload": {
             "description": "Authentication payload",
             "type": "object",
@@ -827,10 +885,44 @@ const docTemplate = `{
                 }
             }
         },
-        "map_string_string": {
+        "main.healthResponse": {
             "type": "object",
-            "additionalProperties": {
-                "type": "string"
+            "properties": {
+                "env": {
+                    "type": "string",
+                    "example": "development"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OK"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.0.0"
+                }
+            }
+        },
+        "main.loginResponse": {
+            "description": "User login response",
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."
+                }
+            }
+        },
+        "main.tokenDTO": {
+            "description": "Token payload",
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                }
             }
         },
         "store.Comment": {
@@ -982,6 +1074,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "username": {
                     "type": "string",

@@ -94,8 +94,8 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 //	@Tags			posts
 //	@Accept			json
 //	@Produce		json
-//	@Param			postID	path		int		true	"Post ID"
-//	@Success		204		{string}	string	"Post deleted successfully"
+//	@Param			postID	path		int	true	"Post ID"
+//	@Success		204		{object}	nil	"Post deleted successfully"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
@@ -119,7 +119,7 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 //	@Produce		json
 //	@Param			postID	path		int		true	"Post ID"
 //	@Param			post	body		PostDTO	true	"Post payload"
-//	@Success		200		{string}	string	"Post updated successfully"
+//	@Success		200		{object}	nil		"Post updated successfully"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		409		{object}	ErrorResponse	"Edit conflict"

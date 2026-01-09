@@ -1,6 +1,6 @@
 basePath: /v1
 definitions:
-  main.CreateCommentDTO:
+  main.CommentDTO:
     description: Comment creation payload
     properties:
       content:
@@ -17,10 +17,20 @@ definitions:
           $ref: '#/definitions/store.FeedablePost'
         type: array
     type: object
-  main.DataResponse-map_string_string:
+  main.DataResponse-main_activateResponse:
     properties:
       data:
-        $ref: '#/definitions/map_string_string'
+        $ref: '#/definitions/main.activateResponse'
+    type: object
+  main.DataResponse-main_healthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/main.healthResponse'
+    type: object
+  main.DataResponse-main_loginResponse:
+    properties:
+      data:
+        $ref: '#/definitions/main.loginResponse'
     type: object
   main.DataResponse-store_Comment:
     properties:
@@ -36,11 +46,6 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/store.User'
-    type: object
-  main.DataResponse-string:
-    properties:
-      data:
-        type: string
     type: object
   main.ErrorResponse:
     description: Error response format
@@ -71,6 +76,13 @@ definitions:
     - content
     - title
     type: object
+  main.activateResponse:
+    description: Account activation response
+    properties:
+      message:
+        example: Account activated successfully
+        type: string
+    type: object
   main.authPayload:
     description: Authentication payload
     properties:
@@ -92,9 +104,33 @@ definitions:
     - password
     - username
     type: object
-  map_string_string:
-    additionalProperties:
-      type: string
+  main.healthResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      status:
+        example: OK
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  main.loginResponse:
+    description: User login response
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9...
+        type: string
+    type: object
+  main.tokenDTO:
+    description: Token payload
+    properties:
+      token:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+    required:
+    - token
     type: object
   store.Comment:
     description: Comment information
@@ -205,6 +241,9 @@ definitions:
       id:
         example: 1
         type: integer
+      is_active:
+        example: false
+        type: boolean
       username:
         example: john_doe
         type: string
@@ -221,6 +260,36 @@ info:
   termsOfService: http://swagger.io/terms/
   title: GopherFeed API
 paths:
+  /auth/activate:
+    post:
+      consumes:
+      - application/json
+      description: Activate a user account using the provided token
+      parameters:
+      - description: Activation token
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/main.tokenDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account activated successfully
+          schema:
+            $ref: '#/definitions/main.DataResponse-main_activateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Activate a user account
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -239,7 +308,7 @@ paths:
         "200":
           description: Authentication token
           schema:
-            $ref: '#/definitions/main.DataResponse-string'
+            $ref: '#/definitions/main.DataResponse-main_loginResponse'
         "400":
           description: Bad Request
           schema:
@@ -356,9 +425,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Application is healthy
           schema:
-            $ref: '#/definitions/main.DataResponse-map_string_string'
+            $ref: '#/definitions/main.DataResponse-main_healthResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -414,8 +483,6 @@ paths:
       responses:
         "204":
           description: Post deleted successfully
-          schema:
-            type: string
         "400":
           description: Bad Request
           schema:
@@ -488,8 +555,6 @@ paths:
       responses:
         "200":
           description: Post updated successfully
-          schema:
-            type: string
         "400":
           description: Bad Request
           schema:
@@ -527,7 +592,7 @@ paths:
         name: comment
         required: true
         schema:
-          $ref: '#/definitions/main.CreateCommentDTO'
+          $ref: '#/definitions/main.CommentDTO'
       produces:
       - application/json
       responses:

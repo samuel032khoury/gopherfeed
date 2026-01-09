@@ -6,10 +6,10 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 )
 
-// CreateCommentDTO represents the payload for creating a comment
+// CommentDTO represents the payload for creating a comment
 //
 //	@Description	Comment creation payload
-type CreateCommentDTO struct {
+type CommentDTO struct {
 	Content string `json:"content" validate:"required,max=1000" example:"Great post!"`
 }
 
@@ -20,8 +20,8 @@ type CreateCommentDTO struct {
 //	@Tags			comments
 //	@Accept			json
 //	@Produce		json
-//	@Param			postID	path		int					true	"Post ID"
-//	@Param			comment	body		CreateCommentDTO	true	"Comment payload"
+//	@Param			postID	path		int			true	"Post ID"
+//	@Param			comment	body		CommentDTO	true	"Comment payload"
 //	@Success		201		{object}	DataResponse[store.Comment]
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
@@ -30,7 +30,7 @@ type CreateCommentDTO struct {
 //	@Router			/posts/{postID}/comments [post]
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
 	postID := getPostFromContext(r).ID
-	var payload CreateCommentDTO
+	var payload CommentDTO
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestError(w, r, err)
 		return

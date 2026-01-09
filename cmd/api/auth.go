@@ -17,6 +17,27 @@ type authPayload struct {
 	Password string `json:"password" validate:"required,min=8,max=72" example:"password123"`
 }
 
+// tokenDTO represents the payload for token-based requests
+//
+//	@Description	Token payload
+type tokenDTO struct {
+	Token string `json:"token" validate:"required,uuid4" example:"123e4567-e89b-12d3-a456-426614174000"`
+}
+
+// activateResponse represents the response payload for account activation
+//
+//	@Description	Account activation response
+type activateResponse struct {
+	Message string `json:"message" example:"Account activated successfully"`
+}
+
+// loginResponse represents the response payload for user login
+//
+//	@Description	User login response
+type loginResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."`
+}
+
 // RegisterUser godoc
 //
 //	@Summary		Register a new user
@@ -75,8 +96,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			user	body		authPayload				true	"User login payload"
-//	@Success		200		{object}	DataResponse[string]	"Authentication token"
+//	@Param			user	body		authPayload					true	"User login payload"
+//	@Success		200		{object}	DataResponse[loginResponse]	"Authentication token"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
@@ -91,4 +112,59 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 		app.badRequestError(w, r, err)
 		return
 	}
+	response := &loginResponse{}
+	token := "mocked_token_value" // TODO: implement actual authentication
+	// ctx := r.Context()
+	// token, err := app.store.Users.Authenticate(ctx, payload.Email, payload.Password)
+	// if err != nil {
+	// 	switch err {
+	// 	case store.ErrInvalidCredentials:
+	// 		app.unauthorizedError(w, r, "invalid credentials")
+	// 	case store.ErrInactiveAccount:
+	// 		app.unauthorizedError(w, r, "account is not activated")
+	// 	default:
+	// 		app.internalServerError(w, r, err)
+	// 	}
+	// 	return
+	// }
+	response.Token = token
+	app.jsonResponse(w, response, http.StatusOK)
+}
+
+// ActivateUser godoc
+//
+//	@Summary		Activate a user account
+//	@Description	Activate a user account using the provided token
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	body		tokenDTO						true	"Activation token"
+//	@Success		200		{object}	DataResponse[activateResponse]	"Account activated successfully"
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/auth/activate [post]
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	payload := &tokenDTO{}
+	if err := readJSON(w, r, payload); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	if err := app.store.Users.Activate(ctx, payload.Token); err != nil {
+		switch err {
+		case store.ErrInvalidToken:
+			app.badRequestError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+	response := activateResponse{
+		Message: "Account activated successfully",
+	}
+	app.jsonResponse(w, response, http.StatusOK)
 }
