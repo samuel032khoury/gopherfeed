@@ -20,14 +20,14 @@ type RabbitMQ struct {
 }
 
 type Config struct {
-	URL string
+	URL       string
 	QueueName string
 }
 
 // New creates a new RabbitMQ instance.
 // It returns a configured RabbitMQ instance ready for publishing or consuming.
-func New(cfg Config) (*RabbitMQ, error) {
-	conn, err := amqp.Dial(cfg.URL)
+func New(url, queueName string) (*RabbitMQ, error) {
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
@@ -38,14 +38,14 @@ func New(cfg Config) (*RabbitMQ, error) {
 		return nil, fmt.Errorf("failed to open a channel: %w", err)
 	}
 
-	queue, err := ch.QueueDeclare(cfg.QueueName, true, false, false, false, nil)
+	queue, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
 	if err != nil {
 		ch.Close()
 		conn.Close()
 		return nil, fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
-	log.Printf("Connected to RabbitMQ, queue '%s' ready", cfg.QueueName)
+	log.Printf("Connected to RabbitMQ, queue '%s' ready", queueName)
 	return &RabbitMQ{
 		conn:    conn,
 		channel: ch,
@@ -59,8 +59,8 @@ func (r *RabbitMQ) Publish(ctx context.Context, body []byte) error {
 
 	err := r.channel.PublishWithContext(ctx, "", r.queue.Name, false, false, amqp.Publishing{
 		DeliveryMode: amqp.Persistent,
-		ContentType: "application/json",
-		Body:        body,
+		ContentType:  "application/json",
+		Body:         body,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to publish message: %w", err)
@@ -69,7 +69,7 @@ func (r *RabbitMQ) Publish(ctx context.Context, body []byte) error {
 }
 
 func (r *RabbitMQ) Consume() (<-chan amqp.Delivery, error) {
-	err := r.channel.Qos(1,0,false)
+	err := r.channel.Qos(1, 0, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set QoS: %w", err)
 	}

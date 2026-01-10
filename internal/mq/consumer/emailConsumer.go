@@ -1,22 +1,23 @@
-package mq
+package consumer
 
 import (
 	"context"
 	"encoding/json"
 	"log"
 
-	"github.com/samuel032khoury/gopherfeed/internal/mailer"
+	"github.com/samuel032khoury/gopherfeed/internal/email"
+	"github.com/samuel032khoury/gopherfeed/internal/mq"
 )
 
 type EmailConsumer struct {
-	mq     *RabbitMQ
-	mailer mailer.Client
+	mq     *mq.RabbitMQ
+	sender email.Sender
 }
 
-func NewEmailConsumer(mq *RabbitMQ, mailer mailer.Client) *EmailConsumer {
+func NewEmailConsumer(mq *mq.RabbitMQ, sender email.Sender) *EmailConsumer {
 	return &EmailConsumer{
 		mq:     mq,
-		mailer: mailer,
+		sender: sender,
 	}
 }
 
@@ -50,24 +51,23 @@ func (ec *EmailConsumer) Start(ctx context.Context) error {
 }
 
 func (ec *EmailConsumer) processMessage(body []byte) error {
-	emailMsg, err := FromBytes(body)
+	emailMsg, err := email.FromBytes(body)
 	if err != nil {
 		return err
 	}
-	log.Printf("Processing email: template=%s, recipient=%s", emailMsg.TemplateFile, emailMsg.Email)
+	log.Printf("Processing email: template=%s, recipient=%s", emailMsg.TemplatePath, emailMsg.To)
 	var data any
 	if err := json.Unmarshal(emailMsg.Data, &data); err != nil {
 		return err
 	}
-	if err := ec.mailer.Send(
-		emailMsg.TemplateFile,
-		emailMsg.Username,
-		emailMsg.Email,
+	if err := ec.sender.Send(
+		emailMsg.To,
+		emailMsg.TemplatePath,
 		data,
 	); err != nil {
 		return err
 	}
-	log.Printf("Email sent successfully: template=%s, recipient=%s", emailMsg.TemplateFile, emailMsg.Email)
+	log.Printf("Email sent successfully: template=%s, recipient=%s", emailMsg.TemplatePath, emailMsg.To)
 	return nil
 }
 

@@ -7,9 +7,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/samuel032khoury/gopherfeed/internal/email"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
-	"github.com/samuel032khoury/gopherfeed/internal/mailer"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
+	"github.com/samuel032khoury/gopherfeed/internal/mq/consumer"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		username:  env.GetString("MAIL_USERNAME", ""),
 		password:  env.GetString("MAIL_PASSWORD", ""),
 	}
-	mailtrap, err := mailer.NewMailtrap(
+	sender, err := email.NewMailtrap(
 		mailConfig.fromEmail,
 		mailConfig.host,
 		mailConfig.username,
@@ -33,18 +34,15 @@ func main() {
 		mailConfig.port,
 	)
 	if err != nil {
-		log.Fatal("Failed to create mailer:", err)
+		log.Fatal("Failed to create email sender:", err)
 	}
-	rabbitmq, err := mq.New(mq.Config{
-		URL:       mqConfig.url,
-		QueueName: mqConfig.queueName,
-	})
+	rabbitmq, err := mq.New(mqConfig.url, mqConfig.queueName)
 	if err != nil {
 		log.Fatal("Failed to connect to RabbitMQ:", err)
 	}
 	defer rabbitmq.Close()
 	log.Println("Connected to RabbitMQ")
-	consumer := mq.NewEmailConsumer(rabbitmq, mailtrap)
+	consumer := consumer.NewEmailConsumer(rabbitmq, sender)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

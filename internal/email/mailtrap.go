@@ -1,4 +1,4 @@
-package mailer
+package email
 
 import (
 	"bytes"
@@ -38,16 +38,16 @@ func NewMailtrap(fromEmail, host, username, password string, port int) (*Mailtra
 	}, nil
 }
 
-func (mt *MailtrapClient) Send(templateFile, username, email string, data any) error {
+func (mt *MailtrapClient) Send(to string, templatePath string, data any) error {
 	// Create a new message
 	message := gomail.NewMessage()
 
 	// Set email headers
 	message.SetHeader("From", mt.fromEmail)
-	message.SetHeader("To", email)
+	message.SetHeader("To", to)
 
 	// Template parsing and building
-	tmpl, err := template.ParseFS(FS, "templates/"+templateFile)
+	tmpl, err := template.ParseFS(FS, "templates/"+templatePath)
 	if err != nil {
 		return err
 	}
@@ -70,15 +70,14 @@ func (mt *MailtrapClient) Send(templateFile, username, email string, data any) e
 	for i := range maxRetries {
 		err := mt.dialer.DialAndSend(message)
 		if err != nil {
-			log.Printf("Failed to send email to %v, attempt %d of %d: %v", email, i+1, maxRetries, err.Error())
+			log.Printf("Failed to send email to %v, attempt %d of %d: %v", to, i+1, maxRetries, err.Error())
 			log.Println(err)
 			// Exponential backoff
 			time.Sleep(time.Second * time.Duration(i+1))
 			continue
 		}
-		log.Printf("Email sent successfully to %v", email)
 		return nil
 	}
 
-	return fmt.Errorf("failed to send email to %v after %d attempts", email, maxRetries)
+	return fmt.Errorf("failed to send email to %v after %d attempts", to, maxRetries)
 }

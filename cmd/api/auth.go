@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/samuel032khoury/gopherfeed/internal/mailer"
+	"github.com/samuel032khoury/gopherfeed/internal/email"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	"github.com/samuel032khoury/gopherfeed/internal/utils"
 )
@@ -95,7 +95,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Username:      user.Username,
 		ActivationURL: utils.GenerateActivationURL(app.config.frontendBaseURL, token, isProdEnv),
 	}
-	err = app.mailer.Send(mailer.UserInviteTemplate, user.Username, user.Email, vars)
+	err = app.emailPublisher.Publish(user.Email, email.UserInviteTemplate, vars)
 	if err != nil {
 		app.logger.Errorw("failed to send activation email", "email", user.Email, "error", err)
 		// saga
@@ -105,6 +105,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
+	app.logger.Infow("email event published", "username", user.Username, "email", user.Email, "token", token)
 	app.jsonResponse(w, user, http.StatusCreated)
 }
 

@@ -9,24 +9,24 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/samuel032khoury/gopherfeed/docs" // import docs
-	"github.com/samuel032khoury/gopherfeed/internal/mailer"
+	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type application struct {
-	config config
-	store  *store.Storage
-	logger *zap.SugaredLogger
-	mailer mailer.Client
+	config         config
+	store          *store.Storage
+	logger         *zap.SugaredLogger
+	emailPublisher *publisher.EmailPublisher
 }
 
 type config struct {
 	addr            string
 	frontendBaseURL string
 	db              dbConfig
+	mq              mqConfig
 	env             string
-	rabbitmq        rabbitmqConfig
 }
 
 type dbConfig struct {
@@ -36,9 +36,13 @@ type dbConfig struct {
 	maxIdleTime  string
 }
 
-type rabbitmqConfig struct {
-	url       string
-	queueName string
+type mqConfig struct {
+	url   string
+	names queueNames
+}
+
+type queueNames struct {
+	email string
 }
 
 func (app *application) mount() http.Handler {
