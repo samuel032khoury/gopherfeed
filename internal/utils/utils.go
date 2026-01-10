@@ -22,3 +22,11 @@ func Hash(input string) string {
 	hash := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(hash[:])
 }
+
+func GenerateActivationURL(frontendBaseURL, token string, isProdEnv bool) string {
+	scheme := "http"
+	if isProdEnv {
+		scheme = "https"
+	}
+	return scheme + "://" + frontendBaseURL + "/activate?token=" + token
+}

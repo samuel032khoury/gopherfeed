@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/samuel032khoury/gopherfeed/docs" // import docs
+	"github.com/samuel032khoury/gopherfeed/internal/mailer"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
@@ -17,12 +18,15 @@ type application struct {
 	config config
 	store  *store.Storage
 	logger *zap.SugaredLogger
+	mailer mailer.Client
 }
 
 type config struct {
-	addr string
-	db   dbConfig
-	env  string
+	addr            string
+	frontendBaseURL string
+	db              dbConfig
+	env             string
+	mail            mailConfig
 }
 
 type dbConfig struct {
@@ -30,6 +34,14 @@ type dbConfig struct {
 	maxOpenConns int
 	maxIdleConns int
 	maxIdleTime  string
+}
+
+type mailConfig struct {
+	fromEmail string
+	host      string
+	port      int
+	username  string
+	password  string
 }
 
 func (app *application) mount() http.Handler {
