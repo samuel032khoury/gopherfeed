@@ -12,7 +12,6 @@ import (
 
 type MailtrapClient struct {
 	fromEmail string
-	
 	dialer    *gomail.Dialer
 }
 
@@ -20,9 +19,9 @@ func NewMailtrap(fromEmail, host, username, password string, port int) (*Mailtra
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("Mailtrap credentials are not set")
 	}
-	
+
 	dialer := gomail.NewDialer(host, port, username, password)
-	
+
 	return &MailtrapClient{
 		fromEmail: fromEmail,
 		dialer:    dialer,
@@ -62,6 +61,7 @@ func (mt *MailtrapClient) Send(templateFile, username, email string, data any) e
 		err := mt.dialer.DialAndSend(message)
 		if err != nil {
 			log.Printf("Failed to send email to %v, attempt %d of %d: %v", email, i+1, maxRetries, err.Error())
+			log.Println(err)
 			// Exponential backoff
 			time.Sleep(time.Second * time.Duration(i+1))
 			continue
@@ -69,6 +69,6 @@ func (mt *MailtrapClient) Send(templateFile, username, email string, data any) e
 		log.Printf("Email sent successfully to %v", email)
 		return nil
 	}
-	
+
 	return fmt.Errorf("failed to send email to %v after %d attempts", email, maxRetries)
 }

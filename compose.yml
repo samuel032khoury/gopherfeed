@@ -13,6 +13,30 @@ services:
       - ./scripts/db_init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - gopherfeed-network
+  gopherfeed-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: gopherfeed-rabbitmq
+    environment:
+      # Default credentials - change in production!
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      # AMQP protocol port (for your Go application)
+      - "5672:5672"
+      # Management UI port (for web dashboard)
+      - "15672:15672"
+    volumes:
+      # Persist queue data across container restarts
+      - gopherfeed-rabbitmq-data:/var/lib/rabbitmq:rw
+    networks:
+      - gopherfeed-network
+    # Health check to ensure RabbitMQ is ready
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
 networks:
   gopherfeed-network:
@@ -22,3 +46,5 @@ networks:
 volumes:
   gopherfeed-data:
     name: gopherfeed-data
+  gopherfeed-rabbitmq-data:
+    name: gopherfeed-rabbitmq-data

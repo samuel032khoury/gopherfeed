@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var (
+const (
 	QueryTimeoutDuration = 5 * time.Second
 )
 

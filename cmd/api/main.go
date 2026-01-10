@@ -5,7 +5,8 @@ import (
 
 	"github.com/samuel032khoury/gopherfeed/internal/db"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
-	"github.com/samuel032khoury/gopherfeed/internal/mailer"
+	asyncMailer "github.com/samuel032khoury/gopherfeed/internal/mailer/async-mailer"
+	"github.com/samuel032khoury/gopherfeed/internal/mq"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	"go.uber.org/zap"
 )
@@ -38,14 +39,11 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
-		env: env.GetString("ENV", "development"),
-		mail: mailConfig{
-			fromEmail: env.GetString("MAIL_FROM_EMAIL", "comm@gopherfeed.io"),
-			host:      env.GetString("MAIL_HOST", "sandbox.smtp.mailtrap.io"),
-			port:      env.GetInt("MAIL_PORT", 587),
-			username:  env.GetString("MAIL_USERNAME", ""),
-			password:  env.GetString("MAIL_PASSWORD", ""),
+		rabbitmq: rabbitmqConfig{
+			url:       env.GetString("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
+			queueName: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
 		},
+		env: env.GetString("ENV", "development"),
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()
@@ -64,13 +62,15 @@ func main() {
 	logger.Info("database connection pool established")
 	store := store.NewPostgresStorage(db)
 
-	mailer, err := mailer.NewMailtrap(
-		cfg.mail.fromEmail,
-		cfg.mail.host,
-		cfg.mail.username,
-		cfg.mail.password,
-		cfg.mail.port,
-	)
+	mailClient, err := asyncMailer.New(mq.Config{
+		URL:       cfg.rabbitmq.url,
+		QueueName: cfg.rabbitmq.queueName,
+	})
+	if err != nil {
+		logger.Fatal("unable to set up async mailer: ", err)
+	}
+	defer mailClient.Close()
+	logger.Info("async mailer configured (RabbitMQ)")
 	if err != nil {
 		logger.Fatal("unable to set up mailer: ", err)
 	}
@@ -79,7 +79,7 @@ func main() {
 		config: cfg,
 		store:  store,
 		logger: logger,
-		mailer: mailer,
+		mailer: mailClient,
 	}
 	mux := app.mount()
 	logger.Fatal(app.run(mux))

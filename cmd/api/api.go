@@ -26,7 +26,7 @@ type config struct {
 	frontendBaseURL string
 	db              dbConfig
 	env             string
-	mail            mailConfig
+	rabbitmq        rabbitmqConfig
 }
 
 type dbConfig struct {
@@ -36,12 +36,9 @@ type dbConfig struct {
 	maxIdleTime  string
 }
 
-type mailConfig struct {
-	fromEmail string
-	host      string
-	port      int
-	username  string
-	password  string
+type rabbitmqConfig struct {
+	url       string
+	queueName string
 }
 
 func (app *application) mount() http.Handler {
