@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -9,6 +10,15 @@ import (
 
 	gomail "gopkg.in/mail.v2"
 )
+
+const (
+	FromName           = "GopherFeed"
+	maxRetries         = 3
+	UserInviteTemplate = "user_invitation.gtpl"
+)
+
+//go:embed "templates"
+var FS embed.FS
 
 type MailtrapClient struct {
 	fromEmail string

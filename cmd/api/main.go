@@ -5,7 +5,7 @@ import (
 
 	"github.com/samuel032khoury/gopherfeed/internal/db"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
-	asyncMailer "github.com/samuel032khoury/gopherfeed/internal/mailer/async-mailer"
+	asyncMailer "github.com/samuel032khoury/gopherfeed/internal/mailer/asyncMailer"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	"go.uber.org/zap"
@@ -61,7 +61,6 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 	store := store.NewPostgresStorage(db)
-
 	mailClient, err := asyncMailer.New(mq.Config{
 		URL:       cfg.rabbitmq.url,
 		QueueName: cfg.rabbitmq.queueName,
@@ -71,9 +70,6 @@ func main() {
 	}
 	defer mailClient.Close()
 	logger.Info("async mailer configured (RabbitMQ)")
-	if err != nil {
-		logger.Fatal("unable to set up mailer: ", err)
-	}
 
 	app := &application{
 		config: cfg,

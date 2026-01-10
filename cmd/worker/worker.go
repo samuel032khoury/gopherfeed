@@ -1,8 +1,9 @@
 package main
 
-import "github.com/samuel032khoury/gopherfeed/internal/mq"
-
-type rabbitmqConfig = mq.Config
+type rabbitmqConfig struct {
+	url       string
+	queueName string
+}
 
 type mailConfig struct {
 	fromEmail string

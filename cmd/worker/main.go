@@ -15,8 +15,8 @@ import (
 func main() {
 	log.Println("Starting email worker...")
 	mqConfig := rabbitmqConfig{
-		URL:       env.GetString("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-		QueueName: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
+		url:       env.GetString("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
+		queueName: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
 	}
 	mailConfig := mailConfig{
 		fromEmail: env.GetString("MAIL_FROM_EMAIL", "comm@gopherfeed.io"),
@@ -35,7 +35,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create mailer:", err)
 	}
-	rabbitmq, err := mq.New(mqConfig)
+	rabbitmq, err := mq.New(mq.Config{
+		URL:       mqConfig.url,
+		QueueName: mqConfig.queueName,
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to RabbitMQ:", err)
 	}
