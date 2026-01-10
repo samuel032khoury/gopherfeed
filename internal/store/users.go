@@ -32,11 +32,6 @@ var (
 	ErrInvalidToken      = errors.New("invalid or expired token")
 )
 
-type execer interface {
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
 func (s *UserStore) getUserFromInvitation(ctx context.Context, token string) (*User, error) {
 	query := `
 		SELECT u.id, u.username, u.email, u.created_at, u.is_active
@@ -44,7 +39,7 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, token string) (*U
 		JOIN user_invitations ui ON u.id = ui.user_id
 		WHERE ui.token = $1 AND ui.expires_at > NOW()
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 
 	tokenHash := utils.Hash(token)
@@ -70,16 +65,9 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		INSERT INTO users (username, email, password_hash)
 		VALUES ($1, $2, $3) RETURNING id, created_at
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
 
-	var execer execer
-
-	if tx != nil {
-		execer = tx
-	} else {
-		execer = s.db
-	}
 	err := execer.QueryRowContext(
 		ctx,
 		query,
@@ -109,15 +97,9 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 
 func (s *UserStore) update(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `UPDATE users SET username = $1, email = $2, is_active = $3 WHERE id = $4`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
-	var execer execer
 
-	if tx != nil {
-		execer = tx
-	} else {
-		execer = s.db
-	}
 	_, err := execer.ExecContext(ctx, query, user.Username, user.Email, user.IsActive, user.ID)
 	return err
 }
@@ -127,30 +109,18 @@ func (s *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, token 
 		INSERT INTO user_invitations (token, user_id, expires_at)
 		VALUES ($1, $2, $3)
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
-	var execer execer
 
-	if tx != nil {
-		execer = tx
-	} else {
-		execer = s.db
-	}
 	_, err := execer.ExecContext(ctx, query, token, userID, time.Now().Add(exp))
 	return err
 }
 
 func (s *UserStore) deleteUserInvitation(ctx context.Context, tx *sql.Tx, userID int64) error {
 	query := `DELETE FROM user_invitations WHERE user_id = $1`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
-	var execer execer
 
-	if tx != nil {
-		execer = tx
-	} else {
-		execer = s.db
-	}
 	_, err := execer.ExecContext(ctx, query, userID)
 	return err
 }
@@ -161,7 +131,7 @@ func (s *UserStore) GetByID(ctx context.Context, id int64) (*User, error) {
 		FROM users
 		WHERE id = $1
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 
 	user := &User{}
@@ -209,4 +179,25 @@ func (s *UserStore) Activate(ctx context.Context, token string) error {
 		}
 		return nil
 	})
+}
+
+func (s *UserStore) Delete(ctx context.Context, id int64) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.deleteUser(ctx, tx, id); err != nil {
+			return err
+		}
+		if err := s.deleteUserInvitation(ctx, tx, id); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (s *UserStore) deleteUser(ctx context.Context, tx *sql.Tx, id int64) error {
+	query := `DELETE FROM users WHERE id = $1`
+	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
+	defer cancel()
+
+	_, err := execer.ExecContext(ctx, query, id)
+	return err
 }

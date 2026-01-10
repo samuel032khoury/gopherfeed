@@ -10,6 +10,30 @@ var (
 	QueryTimeoutDuration = 5 * time.Second
 )
 
+// Common database execution interface
+type execer interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// Common helper functions for all stores
+func withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, QueryTimeoutDuration)
+}
+
+func getExecer(db *sql.DB, tx *sql.Tx) execer {
+	if tx != nil {
+		return tx
+	}
+	return db
+}
+
+func prepareContext(ctx context.Context, db *sql.DB, tx *sql.Tx) (context.Context, context.CancelFunc, execer) {
+	ctx, cancel := withTimeout(ctx)
+	execer := getExecer(db, tx)
+	return ctx, cancel, execer
+}
+
 type Storage struct {
 	Posts interface {
 		Create(context.Context, *Post) error
@@ -23,6 +47,7 @@ type Storage struct {
 		GetByID(context.Context, int64) (*User, error)
 		Register(context.Context, *User, string, time.Duration) error
 		Activate(context.Context, string) error
+		Delete(context.Context, int64) error
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]*Comment, error)

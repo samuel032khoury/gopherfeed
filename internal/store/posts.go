@@ -40,7 +40,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 		INSERT INTO posts (title, content, user_id, tags)
 		VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 	return s.db.QueryRowContext(
 		ctx,
@@ -58,7 +58,7 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 		FROM posts
 		WHERE id = $1
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 	post := &Post{}
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -82,7 +82,7 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 
 func (s *PostStore) Delete(ctx context.Context, id int64) error {
 	query := `DELETE FROM posts WHERE id = $1`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 	_, err := s.db.ExecContext(ctx, query, id)
 	return err
@@ -95,7 +95,7 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 		WHERE id = $4 AND version = $5
 		RETURNING updated_at, version
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 	return s.db.QueryRowContext(
 		ctx,
@@ -126,7 +126,7 @@ func (s *PostStore) GetFeed(ctx context.Context, userID int64, params *Paginatio
 		ORDER BY p.created_at ` + params.Sort + `
 		LIMIT $6 OFFSET $7
 	`
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := withTimeout(ctx)
 	defer cancel()
 	searchTerm := "%" + params.Search + "%"
 	rows, err := s.db.QueryContext(ctx, query, userID, searchTerm, pq.Array(params.Tags), params.Since, params.Until, params.Limit, params.Offset)
