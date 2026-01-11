@@ -83,8 +83,42 @@ definitions:
         example: Account activated successfully
         type: string
     type: object
-  main.authPayload:
-    description: Authentication payload
+  main.healthResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      status:
+        example: OK
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  main.loginPayload:
+    description: Login payload
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password123
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  main.loginResponse:
+    description: User login response
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9...
+        type: string
+    type: object
+  main.registerPayload:
+    description: Registration payload
     properties:
       email:
         example: john@example.com
@@ -103,25 +137,6 @@ definitions:
     - email
     - password
     - username
-    type: object
-  main.healthResponse:
-    properties:
-      env:
-        example: development
-        type: string
-      status:
-        example: OK
-        type: string
-      version:
-        example: 1.0.0
-        type: string
-    type: object
-  main.loginResponse:
-    description: User login response
-    properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9...
-        type: string
     type: object
   main.tokenDTO:
     description: Token payload
@@ -301,7 +316,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/main.authPayload'
+          $ref: '#/definitions/main.loginPayload'
       produces:
       - application/json
       responses:
@@ -335,7 +350,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/main.authPayload'
+          $ref: '#/definitions/main.registerPayload'
       produces:
       - application/json
       responses:

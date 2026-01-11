@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/db"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
@@ -44,6 +45,17 @@ func main() {
 				email: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
 			},
 		},
+		auth: authConfig{
+			basic: basicAuthConfig{
+				username: env.GetString("BASIC_AUTH_USERNAME", "admin"),
+				password: env.GetString("BASIC_AUTH_PASSWORD", "password"),
+			},
+			jwt: jwtConfig{
+				secretKey:     env.GetString("JWT_SECRET_KEY", "your-secret-key"),
+				tokenDuration: env.GetString("JWT_TOKEN_DURATION", "24h"),
+				iss:           env.GetString("JWT_ISSUER", "gopherfeed.io"),
+			},
+		},
 		env: env.GetString("ENV", "development"),
 	}
 
@@ -72,11 +84,14 @@ func main() {
 	defer emailPublisher.Close()
 	logger.Info("email publisher created")
 
+	jwtAuthenticator := auth.NewJWTAuthenticator(cfg.auth.jwt.secretKey, cfg.auth.jwt.iss, cfg.auth.jwt.iss, cfg.auth.jwt.tokenDuration)
+
 	app := &application{
 		config:         cfg,
 		store:          store,
 		logger:         logger,
 		emailPublisher: emailPublisher,
+		authenticator:  jwtAuthenticator,
 	}
 	mux := app.mount()
 	logger.Fatal(app.run(mux))

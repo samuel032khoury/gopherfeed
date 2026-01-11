@@ -9,11 +9,19 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/utils"
 )
 
-// authPayload represents the expected payload for authentication endpoints
+// registerPayload represents the expected payload for authentication endpoints
 //
-//	@Description	Authentication payload
-type authPayload struct {
+//	@Description	Registration payload
+type registerPayload struct {
 	Username string `json:"username" validate:"required,alphanum,min=3,max=30" example:"johndoe"`
+	Email    string `json:"email" validate:"required,email" example:"john@example.com"`
+	Password string `json:"password" validate:"required,min=8,max=72" example:"password123"`
+}
+
+// loginPayload represents the expected payload for authentication endpoints
+//
+//	@Description	Login payload
+type loginPayload struct {
 	Email    string `json:"email" validate:"required,email" example:"john@example.com"`
 	Password string `json:"password" validate:"required,min=8,max=72" example:"password123"`
 }
@@ -46,13 +54,13 @@ type loginResponse struct {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			user	body		authPayload					true	"User registration payload"
+//	@Param			user	body		registerPayload					true	"User registration payload"
 //	@Success		201		{object}	DataResponse[store.User]	"User registered successfully"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/auth/register [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
-	payload := &authPayload{}
+	payload := &registerPayload{}
 	if err := readJSON(w, r, payload); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -116,14 +124,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			user	body		authPayload					true	"User login payload"
+//	@Param			user	body		loginPayload					true	"User login payload"
 //	@Success		200		{object}	DataResponse[loginResponse]	"Authentication token"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/auth/login [post]
 func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request) {
-	payload := &authPayload{}
+	payload := &loginPayload{}
 	if err := readJSON(w, r, payload); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -132,21 +140,19 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 		app.badRequestError(w, r, err)
 		return
 	}
+
+	ctx := r.Context()
+	token, err := app.store.Users.Authenticate(ctx, payload.Email, payload.Password, app.authenticator)
+	if err != nil {
+		switch err {
+		case store.ErrInvalidCredentials:
+			app.unauthorizedError(w, r, false, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
 	response := &loginResponse{}
-	token := "mocked_token_value" // TODO: implement actual authentication
-	// ctx := r.Context()
-	// token, err := app.store.Users.Authenticate(ctx, payload.Email, payload.Password)
-	// if err != nil {
-	// 	switch err {
-	// 	case store.ErrInvalidCredentials:
-	// 		app.unauthorizedError(w, r, "invalid credentials")
-	// 	case store.ErrInactiveAccount:
-	// 		app.unauthorizedError(w, r, "account is not activated")
-	// 	default:
-	// 		app.internalServerError(w, r, err)
-	// 	}
-	// 	return
-	// }
 	response.Token = token
 	app.jsonResponse(w, response, http.StatusOK)
 }

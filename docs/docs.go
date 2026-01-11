@@ -90,7 +90,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.authPayload"
+                            "$ref": "#/definitions/main.loginPayload"
                         }
                     }
                 ],
@@ -142,7 +142,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.authPayload"
+                            "$ref": "#/definitions/main.registerPayload"
                         }
                     }
                 ],
@@ -858,8 +858,55 @@ const docTemplate = `{
                 }
             }
         },
-        "main.authPayload": {
-            "description": "Authentication payload",
+        "main.healthResponse": {
+            "type": "object",
+            "properties": {
+                "env": {
+                    "type": "string",
+                    "example": "development"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OK"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.0.0"
+                }
+            }
+        },
+        "main.loginPayload": {
+            "description": "Login payload",
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
+                    "example": "password123"
+                }
+            }
+        },
+        "main.loginResponse": {
+            "description": "User login response",
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."
+                }
+            }
+        },
+        "main.registerPayload": {
+            "description": "Registration payload",
             "type": "object",
             "required": [
                 "email",
@@ -882,33 +929,6 @@ const docTemplate = `{
                     "maxLength": 30,
                     "minLength": 3,
                     "example": "johndoe"
-                }
-            }
-        },
-        "main.healthResponse": {
-            "type": "object",
-            "properties": {
-                "env": {
-                    "type": "string",
-                    "example": "development"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "OK"
-                },
-                "version": {
-                    "type": "string",
-                    "example": "1.0.0"
-                }
-            }
-        },
-        "main.loginResponse": {
-            "description": "User login response",
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."
                 }
             }
         },

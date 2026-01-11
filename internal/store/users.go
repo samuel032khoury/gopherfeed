@@ -6,7 +6,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
+	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/utils"
 )
 
@@ -27,9 +29,10 @@ type UserStore struct {
 }
 
 var (
-	ErrDuplicateEmail    = errors.New("user with that email already exists")
-	ErrDuplicateUsername = errors.New("user with that username already exists")
-	ErrInvalidToken      = errors.New("invalid or expired token")
+	ErrDuplicateEmail     = errors.New("user with that email already exists")
+	ErrDuplicateUsername  = errors.New("user with that username already exists")
+	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInvalidToken       = errors.New("invalid or expired token")
 )
 
 func (s *UserStore) getUserFromInvitation(ctx context.Context, token string) (*User, error) {
@@ -129,7 +132,7 @@ func (s *UserStore) GetByID(ctx context.Context, id int64) (*User, error) {
 	query := `
 		SELECT id, username, email, password_hash, created_at
 		FROM users
-		WHERE id = $1
+		WHERE id = $1 AND is_active = TRUE
 	`
 	ctx, cancel := withTimeout(ctx)
 	defer cancel()
@@ -162,6 +165,43 @@ func (s *UserStore) Register(ctx context.Context, user *User, token string, exp 
 		}
 		return nil
 	})
+}
+
+func (s *UserStore) Authenticate(ctx context.Context, email, password string, authenticator auth.Authenticator) (string, error) {
+	query := `
+		SELECT id, username, password_hash
+		FROM users
+		WHERE email = $1 AND is_active = TRUE
+	`
+	ctx, cancel := withTimeout(ctx)
+	defer cancel()
+
+	var id int64
+	var username, passwordHash string
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&id, &username, &passwordHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrInvalidCredentials
+		}
+		return "", err
+	}
+	if !utils.CheckPasswordHash(password, passwordHash) {
+		return "", ErrInvalidCredentials
+	}
+	exp, iss, aud := authenticator.GetMetadata()
+	claims := jwt.MapClaims{
+		"sub": id,
+		"exp": time.Now().Add(exp).Unix(),
+		"iat": time.Now().Unix(),
+		"nbf": time.Now().Unix(),
+		"iss": iss,
+		"aud": aud,
+	}
+	token, err := authenticator.GenerateToken(claims)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func (s *UserStore) Activate(ctx context.Context, token string) error {

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/samuel032khoury/gopherfeed/docs" // import docs
+	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -20,6 +21,7 @@ type application struct {
 	store          *store.Storage
 	logger         *zap.SugaredLogger
 	emailPublisher *publisher.EmailPublisher
+	authenticator  auth.Authenticator
 }
 
 type config struct {
@@ -27,6 +29,7 @@ type config struct {
 	frontendBaseURL string
 	db              dbConfig
 	mq              mqConfig
+	auth            authConfig
 	env             string
 }
 
@@ -40,6 +43,22 @@ type dbConfig struct {
 type mqConfig struct {
 	url   string
 	names queueNames
+}
+
+type authConfig struct {
+	basic basicAuthConfig
+	jwt   jwtConfig
+}
+
+type basicAuthConfig struct {
+	username string
+	password string
+}
+
+type jwtConfig struct {
+	secretKey     string
+	tokenDuration string
+	iss           string
 }
 
 type queueNames struct {
@@ -68,7 +87,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware()).Get("/health", app.healthCheckHandler)
 
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL("http://"+app.config.addr+"/v1/swagger/doc.json"),

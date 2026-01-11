@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/samuel032khoury/gopherfeed/internal/auth"
 )
 
 const (
@@ -46,6 +48,7 @@ type Storage struct {
 		Create(context.Context, *sql.Tx, *User) error
 		GetByID(context.Context, int64) (*User, error)
 		Register(context.Context, *User, string, time.Duration) error
+		Authenticate(context.Context, string, string, auth.Authenticator) (string, error)
 		Activate(context.Context, string) error
 		Delete(context.Context, int64) error
 	}
