@@ -31,7 +31,7 @@ const version = "0.0.1"
 func main() {
 	cfg := config{
 		addr:            env.GetString("ADDR", ":8080"),
-		frontendBaseURL: env.GetString("FRONTEND_BASE_URL", "localhost:3000"),
+		frontendBaseURL: env.GetString("FRONTEND_BASE_URL", "localhost:5173"),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://user:password@localhost:5432/gopherfeed?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
