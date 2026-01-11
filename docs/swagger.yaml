@@ -99,10 +99,10 @@ definitions:
     description: Login payload
     properties:
       email:
-        example: john@example.com
+        example: user1@example.com
         type: string
       password:
-        example: password123
+        example: password
         maxLength: 72
         minLength: 8
         type: string
@@ -121,15 +121,15 @@ definitions:
     description: Registration payload
     properties:
       email:
-        example: john@example.com
+        example: newuser@example.com
         type: string
       password:
-        example: password123
+        example: password
         maxLength: 72
         minLength: 8
         type: string
       username:
-        example: johndoe
+        example: newuser
         maxLength: 30
         minLength: 3
         type: string
@@ -259,6 +259,9 @@ definitions:
       is_active:
         example: false
         type: boolean
+      role_id:
+        example: 1
+        type: integer
       username:
         example: john_doe
         type: string

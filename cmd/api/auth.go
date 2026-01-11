@@ -13,17 +13,17 @@ import (
 //
 //	@Description	Registration payload
 type registerPayload struct {
-	Username string `json:"username" validate:"required,alphanum,min=3,max=30" example:"johndoe"`
-	Email    string `json:"email" validate:"required,email" example:"john@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=72" example:"password123"`
+	Username string `json:"username" validate:"required,alphanum,min=3,max=30" example:"newuser"`
+	Email    string `json:"email" validate:"required,email" example:"newuser@example.com"`
+	Password string `json:"password" validate:"required,min=8,max=72" example:"password"`
 }
 
 // loginPayload represents the expected payload for authentication endpoints
 //
 //	@Description	Login payload
 type loginPayload struct {
-	Email    string `json:"email" validate:"required,email" example:"john@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=72" example:"password123"`
+	Email    string `json:"email" validate:"required,email" example:"user1@example.com"`
+	Password string `json:"password" validate:"required,min=8,max=72" example:"password"`
 }
 
 // tokenDTO represents the payload for token-based requests
@@ -79,6 +79,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Username: payload.Username,
 		Email:    payload.Email,
 		Password: encryptedPassword,
+		RoleID:   1,
 	}
 	ctx := r.Context()
 	token := uuid.New().String()

@@ -1,11 +1,69 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
 )
+
+type currUserKey string
+
+const currUserKeyCtx currUserKey = "curr_user"
+
+func (app *application) postParamMiddleware() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			postIDParam := chi.URLParam(r, "postID")
+			postID, err := strconv.ParseInt(postIDParam, 10, 64)
+			if err != nil {
+				app.badRequestError(w, r, err)
+				return
+			}
+			ctx := r.Context()
+			post, err := app.store.Posts.GetByID(ctx, postID)
+			if err != nil {
+				app.internalServerError(w, r, err)
+				return
+			}
+			if post == nil {
+				app.notFoundError(w, r)
+				return
+			}
+			ctx = context.WithValue(ctx, postKeyCtx, post)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func (app *application) userParamMiddleware() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+			if err != nil {
+				app.badRequestError(w, r, err)
+				return
+			}
+			ctx := r.Context()
+			user, err := app.store.Users.GetByID(ctx, userID)
+			if err != nil {
+				app.internalServerError(w, r, err)
+				return
+			}
+			if user == nil {
+				app.notFoundError(w, r)
+				return
+			}
+			ctx = context.WithValue(ctx, userKeyCtx, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
 
 func (app *application) BasicAuthMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -32,7 +90,6 @@ func (app *application) BasicAuthMiddleware() func(next http.Handler) http.Handl
 			username := app.config.auth.basic.username
 			password := app.config.auth.basic.password
 			creds := strings.SplitN(string(decoded), ":", 2)
-			fmt.Println(creds, username, password)
 			if len(creds) != 2 || creds[0] != username || creds[1] != password {
 				app.unauthorizedError(w, r, true, fmt.Errorf("invalid authorization value"))
 				return
@@ -40,4 +97,82 @@ func (app *application) BasicAuthMiddleware() func(next http.Handler) http.Handl
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func (app *application) TokenAuthMiddleware() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// read the authorization header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				app.unauthorizedError(w, r, false, fmt.Errorf("missing authorization header"))
+				return
+			}
+			// parse -> get the token
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				app.unauthorizedError(w, r, false, fmt.Errorf("malformed authorization header"))
+				return
+			}
+			token := parts[1]
+			jwtToken, err := app.authenticator.ValidateToken(token)
+			if err != nil {
+				app.unauthorizedError(w, r, false, fmt.Errorf("invalid or expired token"))
+				return
+			}
+			claims, ok := jwtToken.Claims.(jwt.MapClaims)
+			if !ok || !jwtToken.Valid {
+				app.unauthorizedError(w, r, false, fmt.Errorf("invalid token claims"))
+				return
+			}
+			userID, err := strconv.ParseInt(fmt.Sprintf("%.f", claims["sub"]), 10, 64)
+			if err != nil || userID <= 0 {
+				app.unauthorizedError(w, r, false, fmt.Errorf("invalid user ID in token claims"))
+				return
+			}
+
+			ctx := r.Context()
+			user, err := app.store.Users.GetByID(ctx, userID)
+			if err != nil {
+				app.unauthorizedError(w, r, false, fmt.Errorf("user not found"))
+				return
+			}
+			ctx = context.WithValue(ctx, currUserKeyCtx, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func (app *application) RBACMiddleware(requiredRole string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user := getCurrentUserFromContext(r)
+			post := getPostFromContext(r)
+			if post.UserID != user.ID {
+				if allowed, err := app.checkRolePermissions(r.Context(), user.RoleID, requiredRole); err != nil {
+					app.internalServerError(w, r, err)
+					return
+				} else if !allowed {
+					app.forbiddenError(w, r)
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func (app *application) checkRolePermissions(ctx context.Context, userRoleID int64, requiredRoleName string) (bool, error) {
+	requiredRole, err := app.store.Roles.GetByName(ctx, requiredRoleName)
+	if err != nil {
+		return false, err
+	}
+	if requiredRole == nil {
+		return false, fmt.Errorf("required role not found")
+	}
+	userRole, err := app.store.Roles.GetByID(ctx, userRoleID)
+	if err != nil {
+		return false, err
+	}
+	return userRole.Level >= requiredRole.Level, nil
 }

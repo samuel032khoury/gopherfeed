@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/samuel032khoury/gopherfeed/internal/store"
+	"github.com/samuel032khoury/gopherfeed/internal/utils"
 )
 
 func Seed(store *store.Storage) {
@@ -39,11 +40,13 @@ func Seed(store *store.Storage) {
 
 func generateUsers(n int) []*store.User {
 	users := make([]*store.User, n)
+	hashedPassword, _ := utils.EncryptPassword("password")
 	for i := range n {
 		users[i] = &store.User{
-			Username: "user" + strconv.Itoa(i),
-			Email:    "user" + strconv.Itoa(i) + "@example.com",
-			Password: "password",
+			Username: "user" + strconv.Itoa(i+1),
+			Email:    "user" + strconv.Itoa(i+1) + "@example.com",
+			Password: hashedPassword,
+			RoleID:   1, // Default role ID
 		}
 	}
 	return users

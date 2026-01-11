@@ -93,18 +93,20 @@ func (app *application) mount() http.Handler {
 			httpSwagger.URL("http://"+app.config.addr+"/v1/swagger/doc.json"),
 		))
 		r.Route("/posts", func(r chi.Router) {
+			r.Use(app.TokenAuthMiddleware())
 			r.Post("/", app.createPostHandler)
 			r.Route("/{postID}", func(r chi.Router) {
-				r.Use(app.postContextMiddleware)
+				r.Use(app.postParamMiddleware())
 				r.Get("/", app.getPostHandler)
 				r.Post("/comments", app.createCommentHandler)
-				r.Delete("/", app.deletePostHandler)
-				r.Put("/", app.updatePostHandler)
+				r.With(app.RBACMiddleware("moderator")).Put("/", app.updatePostHandler)
+				r.With(app.RBACMiddleware("admin")).Delete("/", app.deletePostHandler)
 			})
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(app.userContextMiddleware)
+				r.Use(app.userParamMiddleware())
+				r.Use(app.TokenAuthMiddleware())
 				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
@@ -112,6 +114,7 @@ func (app *application) mount() http.Handler {
 		})
 
 		r.Route("/feeds", func(r chi.Router) {
+			r.Use(app.TokenAuthMiddleware())
 			r.Get("/", app.getFeedHandler)
 		})
 

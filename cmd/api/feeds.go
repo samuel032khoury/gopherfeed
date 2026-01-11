@@ -47,8 +47,8 @@ func (app *application) getFeedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	userId := 1 // TODO: get authenticated user ID
-	feed, err := app.store.Posts.GetFeed(ctx, int64(userId), params)
+	currentUserID := getCurrentUserFromContext(r).ID
+	feed, err := app.store.Posts.GetFeed(ctx, int64(currentUserID), params)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

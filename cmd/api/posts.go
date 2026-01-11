@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 )
 
@@ -46,12 +43,12 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		app.badRequestError(w, r, err)
 		return
 	}
-	userId := 1 // TODO: get authenticated user ID
+	currentUserID := getCurrentUserFromContext(r).ID
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		UserID:  int64(userId),
+		UserID:  int64(currentUserID),
 	}
 	ctx := r.Context()
 	if err := app.store.Posts.Create(ctx, post); err != nil {
@@ -149,29 +146,6 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-}
-
-func (app *application) postContextMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		postIDParam := chi.URLParam(r, "postID")
-		postID, err := strconv.ParseInt(postIDParam, 10, 64)
-		if err != nil {
-			app.badRequestError(w, r, err)
-			return
-		}
-		ctx := r.Context()
-		post, err := app.store.Posts.GetByID(ctx, postID)
-		if err != nil {
-			app.internalServerError(w, r, err)
-			return
-		}
-		if post == nil {
-			app.notFoundError(w, r)
-			return
-		}
-		ctx = context.WithValue(ctx, postKeyCtx, post)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 func getPostFromContext(r *http.Request) *store.Post {

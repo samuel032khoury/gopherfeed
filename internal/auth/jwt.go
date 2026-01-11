@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -8,18 +9,18 @@ import (
 
 type JWTAuthenticator struct {
 	secretKey           string
-	Aud                 string
-	Iss                 string
-	TokenExpiryDuration time.Duration
+	aud                 string
+	iss                 string
+	tokenExpiryDuration time.Duration
 }
 
 func NewJWTAuthenticator(secretKey, aud, iss, tokenExpiryString string) *JWTAuthenticator {
 	tokenExpiryDuration, _ := time.ParseDuration(tokenExpiryString)
 	return &JWTAuthenticator{
 		secretKey:           secretKey,
-		Aud:                 aud,
-		Iss:                 iss,
-		TokenExpiryDuration: tokenExpiryDuration,
+		aud:                 aud,
+		iss:                 iss,
+		tokenExpiryDuration: tokenExpiryDuration,
 	}
 }
 
@@ -34,10 +35,20 @@ func (a *JWTAuthenticator) GenerateToken(claims jwt.Claims) (string, error) {
 }
 
 func (a *JWTAuthenticator) ValidateToken(token string) (*jwt.Token, error) {
-	// Implementation for validating JWT token
-	return nil, nil
+	return jwt.Parse(token, func(t *jwt.Token) (any, error) {
+		// Validate the signing method
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
+		}
+		return []byte(a.secretKey), nil
+	},
+		jwt.WithExpirationRequired(),
+		jwt.WithAudience(a.aud),
+		jwt.WithIssuer(a.iss),
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
+	)
 }
 
 func (a *JWTAuthenticator) GetMetadata() (exp time.Duration, iss string, aud string) {
-	return a.TokenExpiryDuration, a.Iss, a.Aud
+	return a.tokenExpiryDuration, a.iss, a.aud
 }

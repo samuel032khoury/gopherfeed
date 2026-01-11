@@ -885,13 +885,13 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "user1@example.com"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 72,
                     "minLength": 8,
-                    "example": "password123"
+                    "example": "password"
                 }
             }
         },
@@ -916,19 +916,19 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "newuser@example.com"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 72,
                     "minLength": 8,
-                    "example": "password123"
+                    "example": "password"
                 },
                 "username": {
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3,
-                    "example": "johndoe"
+                    "example": "newuser"
                 }
             }
         },
@@ -1098,6 +1098,10 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean",
                     "example": false
+                },
+                "role_id": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "username": {
                     "type": "string",

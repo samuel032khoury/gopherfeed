@@ -22,6 +22,7 @@ type User struct {
 	Password  string `json:"-"`
 	CreatedAt string `json:"created_at" example:"2026-01-06T07:22:18Z"`
 	IsActive  bool   `json:"is_active" example:"false"`
+	RoleID    int64  `json:"role_id" example:"1"`
 }
 
 type UserStore struct {
@@ -65,8 +66,8 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, token string) (*U
 
 func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
-		INSERT INTO users (username, email, password_hash)
-		VALUES ($1, $2, $3) RETURNING id, created_at
+		INSERT INTO users (username, email, password_hash, role_id)
+		VALUES ($1, $2, $3, $4) RETURNING id, created_at
 	`
 	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
@@ -77,6 +78,7 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.Username,
 		user.Email,
 		user.Password,
+		user.RoleID,
 	).Scan(&user.ID, &user.CreatedAt)
 
 	if err != nil {
@@ -130,7 +132,7 @@ func (s *UserStore) deleteUserInvitation(ctx context.Context, tx *sql.Tx, userID
 
 func (s *UserStore) GetByID(ctx context.Context, id int64) (*User, error) {
 	query := `
-		SELECT id, username, email, password_hash, created_at
+		SELECT id, username, email, password_hash, created_at, is_active, role_id
 		FROM users
 		WHERE id = $1 AND is_active = TRUE
 	`
@@ -145,6 +147,7 @@ func (s *UserStore) GetByID(ctx context.Context, id int64) (*User, error) {
 		&user.Password,
 		&user.CreatedAt,
 		&user.IsActive,
+		&user.RoleID,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

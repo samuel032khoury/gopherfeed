@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 )
 
@@ -49,9 +46,10 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r)
 
-	var userId int64 = 1 // TODO: get authenticated user ID
+	ctx := r.Context()
+	currentUserID := getCurrentUserFromContext(r).ID
 
-	if err := app.store.Followers.Follow(r.Context(), userId, followee.ID); err != nil {
+	if err := app.store.Followers.Follow(ctx, currentUserID, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -75,38 +73,27 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r)
 
-	var userId int64 = 1 // TODO: get authenticated user ID
+	currentUserID := getCurrentUserFromContext(r).ID
 
-	if err := app.store.Followers.Unfollow(r.Context(), userId, followee.ID); err != nil {
+	if err := app.store.Followers.Unfollow(r.Context(), currentUserID, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *application) userContextMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
-		if err != nil {
-			app.badRequestError(w, r, err)
-			return
-		}
-		ctx := r.Context()
-		user, err := app.store.Users.GetByID(ctx, userID)
-		if err != nil {
-			app.internalServerError(w, r, err)
-			return
-		}
-		if user == nil {
-			app.notFoundError(w, r)
-			return
-		}
-		ctx = context.WithValue(ctx, userKeyCtx, user)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+func getCurrentUserFromContext(r *http.Request) *store.User {
+	user, ok := r.Context().Value(currUserKeyCtx).(*store.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
 func getUserFromContext(r *http.Request) *store.User {
-	user, _ := r.Context().Value(userKeyCtx).(*store.User)
+	user, ok := r.Context().Value(userKeyCtx).(*store.User)
+	if !ok {
+		return nil
+	}
 	return user
 }
