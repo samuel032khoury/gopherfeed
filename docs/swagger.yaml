@@ -342,6 +342,19 @@ paths:
       summary: User login
       tags:
       - auth
+  /auth/logout:
+    post:
+      description: Clear JWT cookie and log out the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out successfully
+          schema:
+            $ref: '#/definitions/main.DataResponse-main_activateResponse'
+      summary: User logout
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
