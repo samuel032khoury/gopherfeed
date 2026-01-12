@@ -30,8 +30,8 @@ type PostDTO struct {
 //	@Param			post	body		PostDTO						true	"Post payload"
 //	@Success		201		{object}	DataResponse[store.Post]	"Post created successfully"
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload PostDTO
@@ -71,7 +71,6 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [get]
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r)
@@ -94,9 +93,9 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 //	@Param			postID	path		int	true	"Post ID"
 //	@Success		204		{object}	nil	"Post deleted successfully"
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	postID := getPostFromContext(r).ID
@@ -118,10 +117,10 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 //	@Param			post	body		PostDTO	true	"Post payload"
 //	@Success		200		{object}	nil		"Post updated successfully"
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		409		{object}	ErrorResponse	"Edit conflict"
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [put]
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostFromContext(r)

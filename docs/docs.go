@@ -72,7 +72,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Authenticate a user and return a token",
+                "description": "Authenticate a user and set authentication cookie",
                 "consumes": [
                     "application/json"
                 ],
@@ -96,10 +96,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Authentication token",
-                        "schema": {
-                            "$ref": "#/definitions/main.DataResponse-main_loginResponse"
-                        }
+                        "description": "Login successful, cookie set"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -134,10 +131,7 @@ const docTemplate = `{
                 "summary": "User logout",
                 "responses": {
                     "200": {
-                        "description": "Logged out successfully",
-                        "schema": {
-                            "$ref": "#/definitions/main.DataResponse-main_activateResponse"
-                        }
+                        "description": "Logged out successfully"
                     }
                 }
             }
@@ -190,11 +184,6 @@ const docTemplate = `{
         },
         "/feeds": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get posts feed with filtering and pagination",
                 "consumes": [
                     "application/json"
@@ -274,6 +263,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -311,11 +306,6 @@ const docTemplate = `{
         },
         "/posts": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Create a new post",
                 "consumes": [
                     "application/json"
@@ -351,6 +341,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -362,11 +358,6 @@ const docTemplate = `{
         },
         "/posts/{postID}": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get a post by its unique ID with comments",
                 "consumes": [
                     "application/json"
@@ -415,11 +406,6 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Update a post by its unique ID",
                 "consumes": [
                     "application/json"
@@ -459,6 +445,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -480,11 +472,6 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Delete a post by its unique ID",
                 "consumes": [
                     "application/json"
@@ -515,6 +502,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -532,11 +525,6 @@ const docTemplate = `{
         },
         "/posts/{postID}/comments": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Create a new comment on a post",
                 "consumes": [
                     "application/json"
@@ -575,6 +563,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - login required",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -646,11 +640,6 @@ const docTemplate = `{
         },
         "/users/{userID}/follow": {
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Follow a user by their unique ID",
                 "consumes": [
                     "application/json"
@@ -681,6 +670,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "User not found",
                         "schema": {
@@ -698,11 +693,6 @@ const docTemplate = `{
         },
         "/users/{userID}/unfollow": {
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Unfollow a user by their unique ID",
                 "consumes": [
                     "application/json"
@@ -729,6 +719,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - login required",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -788,14 +784,6 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/main.healthResponse"
-                }
-            }
-        },
-        "main.DataResponse-main_loginResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/main.loginResponse"
                 }
             }
         },
@@ -907,16 +895,6 @@ const docTemplate = `{
                     "maxLength": 72,
                     "minLength": 8,
                     "example": "password"
-                }
-            }
-        },
-        "main.loginResponse": {
-            "description": "User login response",
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."
                 }
             }
         },
@@ -1123,13 +1101,6 @@ const docTemplate = `{
                     "example": "john_doe"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`

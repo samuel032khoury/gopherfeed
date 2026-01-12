@@ -24,9 +24,9 @@ type CommentDTO struct {
 //	@Param			comment	body		CommentDTO	true	"Comment payload"
 //	@Success		201		{object}	DataResponse[store.Comment]
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		404		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID}/comments [post]
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
 	postID := getPostFromContext(r).ID

@@ -27,10 +27,6 @@ const version = "0.0.1"
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @BasePath					/v1
-//
-// @securityDefinitions.apikey	ApiKeyAuth
-// @in							header
-// @name						Authorization
 func main() {
 	// =========================================================================
 	// Configuration

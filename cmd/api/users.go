@@ -38,9 +38,9 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 //	@Param			userID	path		int	true	"User ID"
 //	@Success		200		{object}	nil	"User followed successfully"
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		404		{object}	ErrorResponse	"User not found"
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/follow [put]
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r)
@@ -65,9 +65,9 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 //	@Param			userID	path		int	true	"User ID"
 //	@Success		200		{object}	nil	"User unfollowed successfully"
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		404		{object}	ErrorResponse	"User not found"
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/unfollow [put]
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	followee := getUserFromContext(r)

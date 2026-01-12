@@ -95,7 +95,7 @@ func (app *application) mount() http.Handler {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
+		AllowCredentials: true, // Allow cookies to be sent
 		MaxAge:           300,
 	}))
 
@@ -146,6 +146,7 @@ func (app *application) mount() http.Handler {
 			r.Post("/register", app.registerUserHandler)
 			r.Post("/login", app.loginUserHandler)
 			r.Post("/activate", app.activateUserHandler)
+			r.Post("/logout", app.logoutUserHandler)
 		})
 	})
 	return r

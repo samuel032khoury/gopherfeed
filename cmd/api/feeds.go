@@ -22,8 +22,8 @@ import (
 //	@Param			until	query		string	false	"Posts until this date (RFC3339)"	example("2026-12-31T23:59:59Z")
 //	@Success		200		{object}	DataResponse[[]store.FeedablePost]
 //	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse	"Unauthorized - login required"
 //	@Failure		500		{object}	ErrorResponse
-//	@Security		ApiKeyAuth
 //	@Router			/feeds [get]
 func (app *application) getFeedHandler(w http.ResponseWriter, r *http.Request) {
 	params := &store.PaginationParams{

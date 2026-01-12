@@ -40,13 +40,6 @@ type activateResponse struct {
 	Message string `json:"message" example:"Account activated successfully"`
 }
 
-// loginResponse represents the response payload for user login
-//
-//	@Description	User login response
-type loginResponse struct {
-	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."`
-}
-
 // RegisterUser godoc
 //
 //	@Summary		Register a new user
@@ -120,12 +113,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 // LoginUser godoc
 //
 //	@Summary		User login
-//	@Description	Authenticate a user and return a token
+//	@Description	Authenticate a user and set authentication cookie
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			user	body		loginPayload					true	"User login payload"
-//	@Success		200		{object}	DataResponse[loginResponse]	"Authentication token"
+//	@Param			user	body		loginPayload						true	"User login payload"
+//	@Success		200		{object}	nil	"Login successful, cookie set"
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
@@ -152,9 +145,21 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 		}
 		return
 	}
-	response := &loginResponse{}
-	response.Token = token
-	app.jsonResponse(w, response, http.StatusOK)
+
+	expDuration, _, _ := app.authenticator.GetMetadata()
+
+	// Set JWT as HTTPOnly cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int(expDuration.Seconds()),
+		HttpOnly: true,
+		Secure:   app.config.env == "production",
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // ActivateUser godoc
@@ -193,4 +198,26 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		Message: "Account activated successfully",
 	}
 	app.jsonResponse(w, response, http.StatusOK)
+}
+
+// LogoutUser godoc
+//
+//	@Summary		User logout
+//	@Description	Clear JWT cookie and log out the user
+//	@Tags			auth
+//	@Produce		json
+//	@Success		200	{object}	nil	"Logged out successfully"
+//	@Router			/auth/logout [post]
+func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Clear the JWT cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1, // expire immediately
+		HttpOnly: true,
+		Secure:   app.config.env == "production",
+		SameSite: http.SameSiteStrictMode,
+	})
+	w.WriteHeader(http.StatusOK)
 }

@@ -106,19 +106,13 @@ func (app *application) BasicAuthMiddleware(next http.Handler) http.Handler {
 
 func (app *application) TokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// read the authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			app.unauthorizedError(w, r, false, fmt.Errorf("missing authorization header"))
+		// Get JWT token from cookie
+		cookie, err := r.Cookie("jwt")
+		if err != nil {
+			app.unauthorizedError(w, r, false, fmt.Errorf("missing authentication cookie"))
 			return
 		}
-		// parse -> get the token
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			app.unauthorizedError(w, r, false, fmt.Errorf("malformed authorization header"))
-			return
-		}
-		token := parts[1]
+		token := cookie.Value
 		jwtToken, err := app.authenticator.ValidateToken(token)
 		if err != nil {
 			app.unauthorizedError(w, r, false, fmt.Errorf("invalid or expired token"))

@@ -64,7 +64,7 @@
         },
         "/auth/login": {
             "post": {
-                "description": "Authenticate a user and return a token",
+                "description": "Authenticate a user and set authentication cookie",
                 "consumes": [
                     "application/json"
                 ],
@@ -88,10 +88,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Authentication token",
-                        "schema": {
-                            "$ref": "#/definitions/main.DataResponse-main_loginResponse"
-                        }
+                        "description": "Login successful, cookie set"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -126,10 +123,7 @@
                 "summary": "User logout",
                 "responses": {
                     "200": {
-                        "description": "Logged out successfully",
-                        "schema": {
-                            "$ref": "#/definitions/main.DataResponse-main_activateResponse"
-                        }
+                        "description": "Logged out successfully"
                     }
                 }
             }
@@ -182,11 +176,6 @@
         },
         "/feeds": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get posts feed with filtering and pagination",
                 "consumes": [
                     "application/json"
@@ -266,6 +255,12 @@
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -303,11 +298,6 @@
         },
         "/posts": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Create a new post",
                 "consumes": [
                     "application/json"
@@ -343,6 +333,12 @@
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -354,11 +350,6 @@
         },
         "/posts/{postID}": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get a post by its unique ID with comments",
                 "consumes": [
                     "application/json"
@@ -407,11 +398,6 @@
                 }
             },
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Update a post by its unique ID",
                 "consumes": [
                     "application/json"
@@ -451,6 +437,12 @@
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -472,11 +464,6 @@
                 }
             },
             "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Delete a post by its unique ID",
                 "consumes": [
                     "application/json"
@@ -507,6 +494,12 @@
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -524,11 +517,6 @@
         },
         "/posts/{postID}/comments": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Create a new comment on a post",
                 "consumes": [
                     "application/json"
@@ -567,6 +555,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - login required",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -638,11 +632,6 @@
         },
         "/users/{userID}/follow": {
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Follow a user by their unique ID",
                 "consumes": [
                     "application/json"
@@ -673,6 +662,12 @@
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized - login required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "User not found",
                         "schema": {
@@ -690,11 +685,6 @@
         },
         "/users/{userID}/unfollow": {
             "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Unfollow a user by their unique ID",
                 "consumes": [
                     "application/json"
@@ -721,6 +711,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - login required",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -780,14 +776,6 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/main.healthResponse"
-                }
-            }
-        },
-        "main.DataResponse-main_loginResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/main.loginResponse"
                 }
             }
         },
@@ -899,16 +887,6 @@
                     "maxLength": 72,
                     "minLength": 8,
                     "example": "password"
-                }
-            }
-        },
-        "main.loginResponse": {
-            "description": "User login response",
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXApJ9..."
                 }
             }
         },
@@ -1115,13 +1093,6 @@
                     "example": "john_doe"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }
