@@ -31,7 +31,98 @@ const version = "0.0.1"
 // @in							header
 // @name						Authorization
 func main() {
-	cfg := config{
+	// =========================================================================
+	// Configuration
+	// =========================================================================
+	cfg := loadConfig()
+
+	// =========================================================================
+	// Logger
+	// =========================================================================
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	// =========================================================================
+	// Database
+	// =========================================================================
+	db, err := db.New(
+		cfg.db.url,
+		cfg.db.maxOpenConns,
+		cfg.db.maxIdleConns,
+		cfg.db.maxIdleTime,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	logger.Info("database connection pool established")
+
+	// =========================================================================
+	// Cache (Optional)
+	// =========================================================================
+	var cacheStorage *cache.CacheStorage
+	if cfg.cache.enabled {
+		redisClient := cache.NewRedisClient(
+			cfg.cache.redisAddr,
+			cfg.cache.redisPassword,
+			cfg.cache.redisDB,
+		)
+		cacheStorage = cache.NewRedisStorage(redisClient)
+		logger.Info("redis cache client created")
+	} else {
+		logger.Info("redis cache is disabled")
+	}
+
+	// =========================================================================
+	// Storage
+	// =========================================================================
+	store := store.NewPostgresStorage(db)
+
+	// =========================================================================
+	// Message Queue
+	// =========================================================================
+	emailPublisher, err := publisher.NewEmailPublisher(
+		cfg.mq.url,
+		cfg.mq.names.email,
+	)
+	if err != nil {
+		log.Fatal("failed to create email publisher:", err)
+	}
+	defer emailPublisher.Close()
+	logger.Info("email publisher created")
+
+	// =========================================================================
+	// Authentication
+	// =========================================================================
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.jwt.secretKey,
+		cfg.auth.jwt.iss,
+		cfg.auth.jwt.iss,
+		cfg.auth.jwt.tokenDuration,
+	)
+
+	// =========================================================================
+	// Application
+	// =========================================================================
+	app := &application{
+		config:         cfg,
+		store:          store,
+		cacheStorage:   cacheStorage,
+		logger:         logger,
+		emailPublisher: emailPublisher,
+		authenticator:  jwtAuthenticator,
+	}
+
+	// =========================================================================
+	// Server
+	// =========================================================================
+	mux := app.mount()
+	logger.Fatal(app.run(mux))
+}
+
+// loadConfig loads application configuration from environment variables
+func loadConfig() config {
+	return config{
 		addr:            env.GetString("ADDR", ":8080"),
 		frontendBaseURL: env.GetString("FRONTEND_BASE_URL", "localhost:5173"),
 		db: dbConfig{
@@ -65,55 +156,4 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 	}
-
-	logger := zap.Must(zap.NewProduction()).Sugar()
-	defer logger.Sync()
-
-	db, err := db.New(
-		cfg.db.url,
-		cfg.db.maxOpenConns,
-		cfg.db.maxIdleConns,
-		cfg.db.maxIdleTime,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	logger.Info("database connection pool established")
-
-	var cacheStorage *cache.CacheStorage
-	if cfg.cache.enabled {
-		redisClient := cache.NewRedisClient(
-			cfg.cache.redisAddr,
-			cfg.cache.redisPassword,
-			cfg.cache.redisDB,
-		)
-		cacheStorage = cache.NewRedisStorage(redisClient)
-		logger.Info("redis cache client created")
-	} else {
-		logger.Info("redis cache is disabled")
-	}
-	store := store.NewPostgresStorage(db)
-	emailPublisher, err := publisher.NewEmailPublisher(
-		cfg.mq.url,
-		cfg.mq.names.email,
-	)
-	if err != nil {
-		log.Fatal("failed to create email publisher:", err)
-	}
-	defer emailPublisher.Close()
-	logger.Info("email publisher created")
-
-	jwtAuthenticator := auth.NewJWTAuthenticator(cfg.auth.jwt.secretKey, cfg.auth.jwt.iss, cfg.auth.jwt.iss, cfg.auth.jwt.tokenDuration)
-
-	app := &application{
-		config:         cfg,
-		store:          store,
-		cacheStorage:   cacheStorage,
-		logger:         logger,
-		emailPublisher: emailPublisher,
-		authenticator:  jwtAuthenticator,
-	}
-	mux := app.mount()
-	logger.Fatal(app.run(mux))
 }
