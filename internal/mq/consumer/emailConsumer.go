@@ -3,22 +3,25 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/samuel032khoury/gopherfeed/internal/email"
+	"github.com/samuel032khoury/gopherfeed/internal/logger"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
 )
 
 type EmailConsumer struct {
 	mq     *mq.RabbitMQ
 	sender email.Sender
+	logger logger.Logger
 }
 
-func NewEmailConsumer(mq *mq.RabbitMQ, sender email.Sender) *EmailConsumer {
+func NewEmailConsumer(mq *mq.RabbitMQ, sender email.Sender, log logger.Logger) *EmailConsumer {
+	if log == nil {
+		log = logger.NewNoopLogger()
+	}
 	return &EmailConsumer{
 		mq:     mq,
-		sender: sender,
-	}
+		sender: sender, logger: log}
 }
 
 func (ec *EmailConsumer) Start(ctx context.Context) error {
@@ -27,24 +30,24 @@ func (ec *EmailConsumer) Start(ctx context.Context) error {
 		return err
 	}
 
-	log.Println("Email worker started, waiting for messages...")
+	ec.logger.Info("Email worker started, waiting for messages...")
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Email worker shutting down...")
+			ec.logger.Info("Email worker shutting down...")
 			return ctx.Err()
 		case msg, ok := <-msgs:
 			if !ok {
-				log.Println("Message channel closed")
+				ec.logger.Info("Message channel closed")
 				return nil
 			}
 			if err := ec.processMessage(msg.Body); err != nil {
-				log.Printf("Failed to process message: %v", err)
+				ec.logger.Errorw("Failed to process message", "error", err)
 				msg.Nack(false, false)
 				continue
 			}
 			if err := msg.Ack(false); err != nil {
-				log.Printf("Failed to acknowledge message: %v", err)
+				ec.logger.Errorw("Failed to acknowledge message", "error", err)
 			}
 		}
 	}
@@ -55,7 +58,7 @@ func (ec *EmailConsumer) processMessage(body []byte) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Processing email: template=%s, recipient=%s", emailMsg.TemplatePath, emailMsg.To)
+	ec.logger.Infow("Processing email", "template", emailMsg.TemplatePath, "recipient", emailMsg.To)
 	var data any
 	if err := json.Unmarshal(emailMsg.Data, &data); err != nil {
 		return err
@@ -67,7 +70,7 @@ func (ec *EmailConsumer) processMessage(body []byte) error {
 	); err != nil {
 		return err
 	}
-	log.Printf("Email sent successfully: template=%s, recipient=%s", emailMsg.TemplatePath, emailMsg.To)
+	ec.logger.Infow("Email sent successfully", "template", emailMsg.TemplatePath, "recipient", emailMsg.To)
 	return nil
 }
 

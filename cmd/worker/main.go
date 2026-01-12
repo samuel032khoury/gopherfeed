@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,10 +10,14 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/env"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/consumer"
+	"go.uber.org/zap"
 )
 
 func main() {
-	log.Println("Starting email worker...")
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	logger.Info("Starting email worker...")
 	mqConfig := rabbitmqConfig{
 		url:       env.GetString("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 		queueName: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
@@ -32,17 +35,18 @@ func main() {
 		mailConfig.username,
 		mailConfig.password,
 		mailConfig.port,
+		logger,
 	)
 	if err != nil {
-		log.Fatal("Failed to create email sender:", err)
+		logger.Fatal("Failed to create email sender:", err)
 	}
-	rabbitmq, err := mq.New(mqConfig.url, mqConfig.queueName)
+	rabbitmq, err := mq.New(mqConfig.url, mqConfig.queueName, logger)
 	if err != nil {
-		log.Fatal("Failed to connect to RabbitMQ:", err)
+		logger.Fatal("Failed to connect to RabbitMQ:", err)
 	}
 	defer rabbitmq.Close()
-	log.Println("Connected to RabbitMQ")
-	consumer := consumer.NewEmailConsumer(rabbitmq, sender)
+	logger.Info("Connected to RabbitMQ")
+	consumer := consumer.NewEmailConsumer(rabbitmq, sender, logger)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -51,12 +55,12 @@ func main() {
 
 	go func() {
 		sig := <-sigChan
-		log.Printf("Received signal: %v, initiating shutdown...", sig)
+		logger.Infow("Received signal, initiating shutdown...", "signal", sig)
 		cancel()
 	}()
 	if err := consumer.Start(ctx); err != nil && err != context.Canceled {
-		log.Fatal("Worker error:", err)
+		logger.Fatal("Worker error:", err)
 	}
 
-	log.Println("Email worker stopped")
+	logger.Info("Email worker stopped")
 }

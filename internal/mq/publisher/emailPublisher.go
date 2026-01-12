@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/samuel032khoury/gopherfeed/internal/email"
+	"github.com/samuel032khoury/gopherfeed/internal/logger"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
 )
 
@@ -15,8 +16,8 @@ type EmailPublisher struct {
 }
 
 // New creates a new EmailPublisher with the given RabbitMQ connection.
-func NewEmailPublisher(url, queueName string) (*EmailPublisher, error) {
-	queue, err := mq.New(url, queueName)
+func NewEmailPublisher(url, queueName string, log logger.Logger) (*EmailPublisher, error) {
+	queue, err := mq.New(url, queueName, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RabbitMQ connection: %w", err)
 	}

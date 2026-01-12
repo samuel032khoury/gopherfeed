@@ -5,9 +5,9 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
-	"log"
 	"time"
 
+	"github.com/samuel032khoury/gopherfeed/internal/logger"
 	gomail "gopkg.in/mail.v2"
 )
 
@@ -23,11 +23,16 @@ var FS embed.FS
 type MailtrapClient struct {
 	fromEmail string
 	dialer    *gomail.Dialer
+	logger    logger.Logger
 }
 
-func NewMailtrap(fromEmail, host, username, password string, port int) (*MailtrapClient, error) {
+func NewMailtrap(fromEmail, host, username, password string, port int, log logger.Logger) (*MailtrapClient, error) {
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("Mailtrap credentials are not set")
+	}
+
+	if log == nil {
+		log = logger.NewNoopLogger()
 	}
 
 	dialer := gomail.NewDialer(host, port, username, password)
@@ -35,6 +40,7 @@ func NewMailtrap(fromEmail, host, username, password string, port int) (*Mailtra
 	return &MailtrapClient{
 		fromEmail: fromEmail,
 		dialer:    dialer,
+		logger:    log,
 	}, nil
 }
 
@@ -70,8 +76,12 @@ func (mt *MailtrapClient) Send(to string, templatePath string, data any) error {
 	for i := range maxRetries {
 		err := mt.dialer.DialAndSend(message)
 		if err != nil {
-			log.Printf("Failed to send email to %v, attempt %d of %d: %v", to, i+1, maxRetries, err.Error())
-			log.Println(err)
+			mt.logger.Warnw("Failed to send email",
+				"to", to,
+				"attempt", i+1,
+				"max_retries", maxRetries,
+				"error", err,
+			)
 			// Exponential backoff
 			time.Sleep(time.Second * time.Duration(i+1))
 			continue

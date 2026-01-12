@@ -3,10 +3,10 @@ package mq
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/samuel032khoury/gopherfeed/internal/logger"
 )
 
 const (
@@ -17,6 +17,7 @@ type RabbitMQ struct {
 	conn    *amqp.Connection
 	channel *amqp.Channel
 	queue   amqp.Queue
+	logger  logger.Logger
 }
 
 type Config struct {
@@ -26,7 +27,11 @@ type Config struct {
 
 // New creates a new RabbitMQ instance.
 // It returns a configured RabbitMQ instance ready for publishing or consuming.
-func New(url, queueName string) (*RabbitMQ, error) {
+func New(url, queueName string, log logger.Logger) (*RabbitMQ, error) {
+	if log == nil {
+		log = logger.NewNoopLogger()
+	}
+
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
@@ -45,11 +50,12 @@ func New(url, queueName string) (*RabbitMQ, error) {
 		return nil, fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
-	log.Printf("Connected to RabbitMQ, queue '%s' ready", queueName)
+	log.Infow("RabbitMQ started", "queue", queueName)
 	return &RabbitMQ{
 		conn:    conn,
 		channel: ch,
 		queue:   queue,
+		logger:  log,
 	}, nil
 }
 
@@ -89,6 +95,6 @@ func (r *RabbitMQ) Close() error {
 	if err := r.conn.Close(); err != nil {
 		return fmt.Errorf("failed to close connection: %w", err)
 	}
-	log.Println("RabbitMQ connection closed")
+	r.logger.Info("RabbitMQ connection closed")
 	return nil
 }

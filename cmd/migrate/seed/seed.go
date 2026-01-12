@@ -1,4 +1,4 @@
-package db
+package main
 
 import (
 	"context"
@@ -9,10 +9,11 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/utils"
 )
 
-func Seed(store *store.Storage) {
+func seed(store *store.Storage) {
 	ctx := context.Background()
 
 	users := generateUsers(100)
+	log.Println("Creating users...")
 	for _, user := range users {
 		if err := store.Users.Create(ctx, nil, user); err != nil {
 			log.Println("failed to create user:", err)
@@ -21,6 +22,7 @@ func Seed(store *store.Storage) {
 	}
 
 	posts := generatePosts(users, 200)
+	log.Println("Creating posts...")
 	for _, post := range posts {
 		if err := store.Posts.Create(ctx, post); err != nil {
 			log.Println("failed to create post:", err)
@@ -29,6 +31,7 @@ func Seed(store *store.Storage) {
 	}
 
 	comments := generateComments(users, posts, 500)
+	log.Println("Creating comments...")
 	for _, comment := range comments {
 		if err := store.Comments.Create(ctx, comment); err != nil {
 			log.Println("failed to create comment:", err)

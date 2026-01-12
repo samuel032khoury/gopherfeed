@@ -84,6 +84,7 @@ func main() {
 	emailPublisher, err := publisher.NewEmailPublisher(
 		cfg.mq.url,
 		cfg.mq.names.email,
+		logger,
 	)
 	if err != nil {
 		log.Fatal("failed to create email publisher:", err)
