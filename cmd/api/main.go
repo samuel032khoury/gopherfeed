@@ -118,7 +118,7 @@ func main() {
 	// Server
 	// =========================================================================
 	mux := app.mount()
-	logger.Fatal(app.run(mux))
+	app.run(mux)
 }
 
 // loadConfig loads application configuration from environment variables
