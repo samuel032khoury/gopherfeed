@@ -37,7 +37,30 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
-
+  gopherfeed-redis:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    container_name: gopherfeed-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - gopherfeed-redis-data:/data
+    networks:
+      - gopherfeed-network
+    command: redis-server --save 60 1 --loglevel warning
+  gopherfeed-redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: gopherfeed-redis-commander
+    hostname: gopherfeed-redis-commander
+    environment:
+      - REDIS_HOSTS=local:gopherfeed-redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - gopherfeed-network
+    depends_on:
+      - gopherfeed-redis
+    restart: unless-stopped
 networks:
   gopherfeed-network:
     name: gopherfeed-network
@@ -48,3 +71,5 @@ volumes:
     name: gopherfeed-data
   gopherfeed-rabbitmq-data:
     name: gopherfeed-rabbitmq-data
+  gopherfeed-redis-data:
+    name: gopherfeed-redis-data

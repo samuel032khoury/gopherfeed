@@ -79,7 +79,6 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Username: payload.Username,
 		Email:    payload.Email,
 		Password: encryptedPassword,
-		RoleID:   1,
 	}
 	ctx := r.Context()
 	token := uuid.New().String()

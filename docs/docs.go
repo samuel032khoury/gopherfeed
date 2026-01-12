@@ -576,11 +576,6 @@ const docTemplate = `{
         },
         "/users/{userID}": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get a user by their unique ID",
                 "consumes": [
                     "application/json"

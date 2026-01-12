@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/samuel032khoury/gopherfeed/internal/store"
 )
 
 type currUserKey string
@@ -50,7 +51,7 @@ func (app *application) userParamMiddleware() func(next http.Handler) http.Handl
 				return
 			}
 			ctx := r.Context()
-			user, err := app.store.Users.GetByID(ctx, userID)
+			user, err := app.getUser(ctx, userID)
 			if err != nil {
 				app.internalServerError(w, r, err)
 				return
@@ -132,7 +133,7 @@ func (app *application) TokenAuthMiddleware() func(next http.Handler) http.Handl
 			}
 
 			ctx := r.Context()
-			user, err := app.store.Users.GetByID(ctx, userID)
+			user, err := app.getUser(ctx, userID)
 			if err != nil {
 				app.unauthorizedError(w, r, false, fmt.Errorf("user not found"))
 				return
@@ -175,4 +176,26 @@ func (app *application) checkRolePermissions(ctx context.Context, userRoleID int
 		return false, err
 	}
 	return userRole.Level >= requiredRole.Level, nil
+}
+
+func (app *application) getUser(ctx context.Context, userID int64) (*store.User, error) {
+	var user *store.User
+	var err error
+	if app.config.cache.enabled {
+		user, err = app.cacheStorage.Users.Get(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if user == nil {
+		if user, err = app.store.Users.GetByID(ctx, userID); user == nil {
+			return user, err
+		}
+		if app.config.cache.enabled {
+			if err = app.cacheStorage.Users.Set(ctx, user); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return user, nil
 }

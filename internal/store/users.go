@@ -67,7 +67,7 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, token string) (*U
 func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
 		INSERT INTO users (username, email, password_hash, role_id)
-		VALUES ($1, $2, $3, $4) RETURNING id, created_at
+		VALUES ($1, $2, $3, (SELECT id FROM roles WHERE name = 'user')) RETURNING id, created_at, role_id
 	`
 	ctx, cancel, execer := prepareContext(ctx, s.db, tx)
 	defer cancel()
@@ -78,8 +78,7 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.Username,
 		user.Email,
 		user.Password,
-		user.RoleID,
-	).Scan(&user.ID, &user.CreatedAt)
+	).Scan(&user.ID, &user.CreatedAt, &user.RoleID)
 
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {

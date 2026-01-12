@@ -665,8 +665,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
       summary: Get user profile
       tags:
       - users

@@ -13,12 +13,14 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
+	"github.com/samuel032khoury/gopherfeed/internal/store/cache"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type application struct {
 	config         config
 	store          *store.Storage
+	cacheStorage   *cache.CacheStorage
 	logger         *zap.SugaredLogger
 	emailPublisher *publisher.EmailPublisher
 	authenticator  auth.Authenticator
@@ -30,6 +32,7 @@ type config struct {
 	db              dbConfig
 	mq              mqConfig
 	auth            authConfig
+	cache           cacheConfig
 	env             string
 }
 
@@ -43,6 +46,10 @@ type dbConfig struct {
 type mqConfig struct {
 	url   string
 	names queueNames
+}
+
+type queueNames struct {
+	email string
 }
 
 type authConfig struct {
@@ -61,8 +68,11 @@ type jwtConfig struct {
 	iss           string
 }
 
-type queueNames struct {
-	email string
+type cacheConfig struct {
+	redisAddr     string
+	redisPassword string
+	redisDB       int
+	enabled       bool
 }
 
 func (app *application) mount() http.Handler {
@@ -106,10 +116,12 @@ func (app *application) mount() http.Handler {
 		r.Route("/users", func(r chi.Router) {
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Use(app.userParamMiddleware())
-				r.Use(app.TokenAuthMiddleware())
 				r.Get("/", app.getUserHandler)
-				r.Put("/follow", app.followUserHandler)
-				r.Put("/unfollow", app.unfollowUserHandler)
+				r.Group(func(r chi.Router) {
+					r.Use(app.TokenAuthMiddleware())
+					r.Put("/follow", app.followUserHandler)
+					r.Put("/unfollow", app.unfollowUserHandler)
+				})
 			})
 		})
 

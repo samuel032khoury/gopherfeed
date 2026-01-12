@@ -8,6 +8,7 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/env"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
+	"github.com/samuel032khoury/gopherfeed/internal/store/cache"
 	"go.uber.org/zap"
 )
 
@@ -56,6 +57,12 @@ func main() {
 				iss:           env.GetString("JWT_ISSUER", "gopherfeed.io"),
 			},
 		},
+		cache: cacheConfig{
+			redisAddr:     env.GetString("REDIS_ADDR", "localhost:6379"),
+			redisPassword: env.GetString("REDIS_PASSWORD", ""),
+			redisDB:       env.GetInt("REDIS_DB", 0),
+			enabled:       env.GetBool("REDIS_ENABLED", false),
+		},
 		env: env.GetString("ENV", "development"),
 	}
 
@@ -73,6 +80,19 @@ func main() {
 	}
 	defer db.Close()
 	logger.Info("database connection pool established")
+
+	var cacheStorage *cache.CacheStorage
+	if cfg.cache.enabled {
+		redisClient := cache.NewRedisClient(
+			cfg.cache.redisAddr,
+			cfg.cache.redisPassword,
+			cfg.cache.redisDB,
+		)
+		cacheStorage = cache.NewRedisStorage(redisClient)
+		logger.Info("redis cache client created")
+	} else {
+		logger.Info("redis cache is disabled")
+	}
 	store := store.NewPostgresStorage(db)
 	emailPublisher, err := publisher.NewEmailPublisher(
 		cfg.mq.url,
@@ -89,6 +109,7 @@ func main() {
 	app := &application{
 		config:         cfg,
 		store:          store,
+		cacheStorage:   cacheStorage,
 		logger:         logger,
 		emailPublisher: emailPublisher,
 		authenticator:  jwtAuthenticator,
