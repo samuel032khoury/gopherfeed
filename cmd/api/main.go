@@ -7,6 +7,7 @@ import (
 	"github.com/samuel032khoury/gopherfeed/internal/db"
 	"github.com/samuel032khoury/gopherfeed/internal/env"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
+	"github.com/samuel032khoury/gopherfeed/internal/ratelimiter"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	"github.com/samuel032khoury/gopherfeed/internal/store/cache"
 	"go.uber.org/zap"
@@ -43,7 +44,7 @@ func main() {
 	defer logger.Sync()
 
 	// =========================================================================
-	// Database
+	// Database & Storage
 	// =========================================================================
 	db, err := db.New(
 		cfg.db.url,
@@ -56,6 +57,7 @@ func main() {
 	}
 	defer db.Close()
 	logger.Info("database connection pool established")
+	store := store.NewPostgresStorage(db)
 
 	// =========================================================================
 	// Cache (Optional)
@@ -72,11 +74,6 @@ func main() {
 	} else {
 		logger.Info("redis cache is disabled")
 	}
-
-	// =========================================================================
-	// Storage
-	// =========================================================================
-	store := store.NewPostgresStorage(db)
 
 	// =========================================================================
 	// Message Queue
@@ -103,6 +100,17 @@ func main() {
 	)
 
 	// =========================================================================
+	// Rate Limiter
+	// =========================================================================
+	limiter, err := ratelimiter.NewFixedWindowLimiter(
+		cfg.ratelimiter.quota,
+		cfg.ratelimiter.interval,
+	)
+	if err != nil {
+		logger.Fatal("failed to create rate limiter:", err)
+	}
+
+	// =========================================================================
 	// Application
 	// =========================================================================
 	app := &application{
@@ -112,6 +120,7 @@ func main() {
 		logger:         logger,
 		emailPublisher: emailPublisher,
 		authenticator:  jwtAuthenticator,
+		ratelimiter:    limiter,
 	}
 
 	// =========================================================================
@@ -154,6 +163,10 @@ func loadConfig() config {
 			redisPassword: env.GetString("REDIS_PASSWORD", ""),
 			redisDB:       env.GetInt("REDIS_DB", 0),
 			enabled:       env.GetBool("REDIS_ENABLED", false),
+		},
+		ratelimiter: ratelimiterConfig{
+			quota:    env.GetInt("RATE_LIMITER_QUOTA", 100),
+			interval: env.GetString("RATE_LIMITER_INTERVAL", "5s"),
 		},
 		env: env.GetString("ENV", "development"),
 	}

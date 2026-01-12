@@ -17,7 +17,17 @@ type currUserKey string
 
 const currUserKeyCtx currUserKey = "curr_user"
 
-func (app *application) postParamMiddleware(next http.Handler) http.Handler {
+func (app *application) RateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if allow, retryAfter := app.ratelimiter.Allow(r.RemoteAddr); !allow {
+			app.rateLimitExceededError(w, r, strconv.Itoa(int(retryAfter.Seconds())))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) PostParamMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		postIDParam := chi.URLParam(r, "postID")
 		postID, err := strconv.ParseInt(postIDParam, 10, 64)
@@ -40,7 +50,7 @@ func (app *application) postParamMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) userParamMiddleware(next http.Handler) http.Handler {
+func (app *application) UserParamMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
 		if err != nil {

@@ -91,14 +91,12 @@ func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedOrigins:   []string{app.config.frontendBaseURL},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		MaxAge:           300,
 	}))
 
 	r.Use(middleware.RequestID)
@@ -107,6 +105,8 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 
 	r.Use(middleware.Timeout(60 * time.Second))
+
+	r.Use(app.RateLimitMiddleware)
 
 	r.Route("/v1", func(r chi.Router) {
 		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)
@@ -118,7 +118,7 @@ func (app *application) mount() http.Handler {
 			r.Use(app.TokenAuthMiddleware)
 			r.Post("/", app.createPostHandler)
 			r.Route("/{postID}", func(r chi.Router) {
-				r.Use(app.postParamMiddleware)
+				r.Use(app.PostParamMiddleware)
 				r.Get("/", app.getPostHandler)
 				r.Post("/comments", app.createCommentHandler)
 				r.With(app.RBACMiddleware("moderator")).Put("/", app.updatePostHandler)
@@ -127,7 +127,7 @@ func (app *application) mount() http.Handler {
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(app.userParamMiddleware)
+				r.Use(app.UserParamMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Group(func(r chi.Router) {
 					r.Use(app.TokenAuthMiddleware)
