@@ -16,6 +16,7 @@ import (
 	"github.com/samuel032khoury/gopherfeed/docs" // import docs
 	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/mq/publisher"
+	"github.com/samuel032khoury/gopherfeed/internal/ratelimiter"
 	"github.com/samuel032khoury/gopherfeed/internal/store"
 	"github.com/samuel032khoury/gopherfeed/internal/store/cache"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -23,20 +24,22 @@ import (
 
 type application struct {
 	config         config
+	logger         *zap.SugaredLogger
 	store          *store.Storage
 	cacheStorage   *cache.CacheStorage
-	logger         *zap.SugaredLogger
 	emailPublisher *publisher.EmailPublisher
 	authenticator  auth.Authenticator
+	ratelimiter    ratelimiter.Limiter
 }
 
 type config struct {
 	addr            string
 	frontendBaseURL string
 	db              dbConfig
+	cache           cacheConfig
 	mq              mqConfig
 	auth            authConfig
-	cache           cacheConfig
+	ratelimiter     ratelimiterConfig
 	env             string
 }
 
@@ -45,6 +48,13 @@ type dbConfig struct {
 	maxOpenConns int
 	maxIdleConns int
 	maxIdleTime  string
+}
+
+type cacheConfig struct {
+	redisAddr     string
+	redisPassword string
+	redisDB       int
+	enabled       bool
 }
 
 type mqConfig struct {
@@ -72,11 +82,9 @@ type jwtConfig struct {
 	iss           string
 }
 
-type cacheConfig struct {
-	redisAddr     string
-	redisPassword string
-	redisDB       int
-	enabled       bool
+type ratelimiterConfig struct {
+	quota    int
+	interval string
 }
 
 func (app *application) mount() http.Handler {
@@ -101,16 +109,16 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.With(app.BasicAuthMiddleware()).Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)
 
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL("http://"+app.config.addr+"/v1/swagger/doc.json"),
 		))
 		r.Route("/posts", func(r chi.Router) {
-			r.Use(app.TokenAuthMiddleware())
+			r.Use(app.TokenAuthMiddleware)
 			r.Post("/", app.createPostHandler)
 			r.Route("/{postID}", func(r chi.Router) {
-				r.Use(app.postParamMiddleware())
+				r.Use(app.postParamMiddleware)
 				r.Get("/", app.getPostHandler)
 				r.Post("/comments", app.createCommentHandler)
 				r.With(app.RBACMiddleware("moderator")).Put("/", app.updatePostHandler)
@@ -119,10 +127,10 @@ func (app *application) mount() http.Handler {
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(app.userParamMiddleware())
+				r.Use(app.userParamMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Group(func(r chi.Router) {
-					r.Use(app.TokenAuthMiddleware())
+					r.Use(app.TokenAuthMiddleware)
 					r.Put("/follow", app.followUserHandler)
 					r.Put("/unfollow", app.unfollowUserHandler)
 				})
@@ -130,7 +138,7 @@ func (app *application) mount() http.Handler {
 		})
 
 		r.Route("/feeds", func(r chi.Router) {
-			r.Use(app.TokenAuthMiddleware())
+			r.Use(app.TokenAuthMiddleware)
 			r.Get("/", app.getFeedHandler)
 		})
 
