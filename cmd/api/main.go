@@ -1,7 +1,9 @@
 package main
 
 import (
+	"expvar"
 	"log"
+	"runtime"
 
 	"github.com/samuel032khoury/gopherfeed/internal/auth"
 	"github.com/samuel032khoury/gopherfeed/internal/db"
@@ -118,6 +120,17 @@ func main() {
 		authenticator:  jwtAuthenticator,
 		ratelimiter:    limiter,
 	}
+
+	// =========================================================================
+	// Stats
+	// =========================================================================
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	// =========================================================================
 	// Server

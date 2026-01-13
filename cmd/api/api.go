@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"net/http"
 	"os"
 	"os/signal"
@@ -111,6 +112,7 @@ func (app *application) mount() http.Handler {
 
 	r.Route("/v1", func(r chi.Router) {
 		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware).Get("/stats", expvar.Handler().ServeHTTP)
 
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL("http://"+app.config.addr+"/v1/swagger/doc.json"),
