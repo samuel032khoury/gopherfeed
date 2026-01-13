@@ -1,5 +1,9 @@
 MIGRATION_DIR=./cmd/migrate/migrations
 
+.PHONY: test
+test:
+	@go test -v ./...
+
 .PHONY: migration-create
 migration:
 	@goose -dir $(MIGRATION_DIR) create $(word 2,$(MAKECMDGOALS)) sql
