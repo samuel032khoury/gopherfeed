@@ -28,7 +28,7 @@ type MailtrapClient struct {
 
 func NewMailtrap(fromEmail, host, username, password string, port int, log *zap.SugaredLogger) (*MailtrapClient, error) {
 	if username == "" || password == "" {
-		return nil, fmt.Errorf("Mailtrap credentials are not set")
+		return nil, fmt.Errorf("mailtrap credentials are not set")
 	}
 
 	dialer := gomail.NewDialer(host, port, username, password)
