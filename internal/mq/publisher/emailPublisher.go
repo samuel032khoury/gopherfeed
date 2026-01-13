@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/samuel032khoury/gopherfeed/internal/email"
-	"github.com/samuel032khoury/gopherfeed/internal/logger"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
+	"go.uber.org/zap"
 )
 
 // EmailPublisher handles publishing email messages to the queue.
@@ -16,7 +16,7 @@ type EmailPublisher struct {
 }
 
 // New creates a new EmailPublisher with the given RabbitMQ connection.
-func NewEmailPublisher(url, queueName string, log logger.Logger) (*EmailPublisher, error) {
+func NewEmailPublisher(url, queueName string, log *zap.SugaredLogger) (*EmailPublisher, error) {
 	queue, err := mq.New(url, queueName, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RabbitMQ connection: %w", err)

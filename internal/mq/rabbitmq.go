@@ -6,7 +6,7 @@ import (
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/samuel032khoury/gopherfeed/internal/logger"
+	"go.uber.org/zap"
 )
 
 const (
@@ -17,7 +17,7 @@ type RabbitMQ struct {
 	conn    *amqp.Connection
 	channel *amqp.Channel
 	queue   amqp.Queue
-	logger  logger.Logger
+	logger  *zap.SugaredLogger
 }
 
 type Config struct {
@@ -27,10 +27,7 @@ type Config struct {
 
 // New creates a new RabbitMQ instance.
 // It returns a configured RabbitMQ instance ready for publishing or consuming.
-func New(url, queueName string, log logger.Logger) (*RabbitMQ, error) {
-	if log == nil {
-		log = logger.NewNoopLogger()
-	}
+func New(url, queueName string, log *zap.SugaredLogger) (*RabbitMQ, error) {
 
 	conn, err := amqp.Dial(url)
 	if err != nil {

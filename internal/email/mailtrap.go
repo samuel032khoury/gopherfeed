@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/samuel032khoury/gopherfeed/internal/logger"
+	"go.uber.org/zap"
 	gomail "gopkg.in/mail.v2"
 )
 
@@ -23,16 +23,12 @@ var FS embed.FS
 type MailtrapClient struct {
 	fromEmail string
 	dialer    *gomail.Dialer
-	logger    logger.Logger
+	logger    *zap.SugaredLogger
 }
 
-func NewMailtrap(fromEmail, host, username, password string, port int, log logger.Logger) (*MailtrapClient, error) {
+func NewMailtrap(fromEmail, host, username, password string, port int, log *zap.SugaredLogger) (*MailtrapClient, error) {
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("Mailtrap credentials are not set")
-	}
-
-	if log == nil {
-		log = logger.NewNoopLogger()
 	}
 
 	dialer := gomail.NewDialer(host, port, username, password)

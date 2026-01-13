@@ -5,20 +5,17 @@ import (
 	"encoding/json"
 
 	"github.com/samuel032khoury/gopherfeed/internal/email"
-	"github.com/samuel032khoury/gopherfeed/internal/logger"
 	"github.com/samuel032khoury/gopherfeed/internal/mq"
+	"go.uber.org/zap"
 )
 
 type EmailConsumer struct {
 	mq     *mq.RabbitMQ
 	sender email.Sender
-	logger logger.Logger
+	logger *zap.SugaredLogger
 }
 
-func NewEmailConsumer(mq *mq.RabbitMQ, sender email.Sender, log logger.Logger) *EmailConsumer {
-	if log == nil {
-		log = logger.NewNoopLogger()
-	}
+func NewEmailConsumer(mq *mq.RabbitMQ, sender email.Sender, log *zap.SugaredLogger) *EmailConsumer {
 	return &EmailConsumer{
 		mq:     mq,
 		sender: sender, logger: log}
