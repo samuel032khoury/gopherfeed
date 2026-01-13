@@ -80,6 +80,7 @@ type jwtConfig struct {
 	secretKey     string
 	tokenDuration string
 	iss           string
+	aud           string
 }
 
 type ratelimiterConfig struct {

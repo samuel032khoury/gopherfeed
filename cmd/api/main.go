@@ -90,9 +90,9 @@ func main() {
 	// =========================================================================
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.jwt.secretKey,
-		cfg.auth.jwt.iss,
-		cfg.auth.jwt.iss,
 		cfg.auth.jwt.tokenDuration,
+		cfg.auth.jwt.iss,
+		cfg.auth.jwt.aud,
 	)
 
 	// =========================================================================
@@ -151,7 +151,8 @@ func loadConfig() config {
 			jwt: jwtConfig{
 				secretKey:     env.GetString("JWT_SECRET_KEY", "your-secret-key"),
 				tokenDuration: env.GetString("JWT_TOKEN_DURATION", "24h"),
-				iss:           env.GetString("JWT_ISSUER", "gopherfeed.io"),
+				iss:           env.GetString("JWT_ISSUER", "gopherfeed-api"),
+				aud:           env.GetString("JWT_AUDIENCE", "gopherfeed"),
 			},
 		},
 		cache: cacheConfig{

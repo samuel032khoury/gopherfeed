@@ -9,18 +9,18 @@ import (
 
 type JWTAuthenticator struct {
 	secretKey           string
-	aud                 string
-	iss                 string
 	tokenExpiryDuration time.Duration
+	iss                 string
+	aud                 string
 }
 
-func NewJWTAuthenticator(secretKey, aud, iss, tokenExpiryString string) *JWTAuthenticator {
+func NewJWTAuthenticator(secretKey, tokenExpiryString, iss, aud string) *JWTAuthenticator {
 	tokenExpiryDuration, _ := time.ParseDuration(tokenExpiryString)
 	return &JWTAuthenticator{
 		secretKey:           secretKey,
-		aud:                 aud,
-		iss:                 iss,
 		tokenExpiryDuration: tokenExpiryDuration,
+		iss:                 iss,
+		aud:                 aud,
 	}
 }
 
