@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/samuel032khoury/gopherfeed/internal/store"
@@ -48,6 +49,11 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 	currentUserID := getCurrentUserFromContext(r).ID
 
+	if currentUserID == followee.ID {
+		app.badRequestError(w, r, fmt.Errorf("cannot follow yourself"))
+		return
+	}
+
 	if err := app.store.Followers.Follow(ctx, currentUserID, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -73,6 +79,11 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	followee := getUserFromContext(r)
 
 	currentUserID := getCurrentUserFromContext(r).ID
+
+	if currentUserID == followee.ID {
+		app.badRequestError(w, r, fmt.Errorf("cannot unfollow yourself"))
+		return
+	}
 
 	if err := app.store.Followers.Unfollow(r.Context(), currentUserID, followee.ID); err != nil {
 		app.internalServerError(w, r, err)
