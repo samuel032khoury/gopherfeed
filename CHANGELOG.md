@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.1...v1.0.2) (2026-01-16)
+
+
+### Bug Fixes
+
+* correct regex for version extraction in update-api-version workflow ([4c3ab25](https://github.com/samuel032khoury/gopherfeed/commit/4c3ab250ce75aea8645d389df80ec4bd1ea393c3))
+
 ## [1.0.1](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.0...v1.0.1) (2026-01-16)
 
 
