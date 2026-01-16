@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const version = ""
+const version = "1.0.0"
 
 //	@title			GopherFeed API
 //	@description	This is the GopherFeed API server.
