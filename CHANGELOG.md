@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.0...v1.0.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* correct version extraction regex in update-api-version workflow ([964b1a3](https://github.com/samuel032khoury/gopherfeed/commit/964b1a3705ebc948376ad50774d6a7225ab41b78))
+* set version to 1.0.0 in main.go ([af31dd6](https://github.com/samuel032khoury/gopherfeed/commit/af31dd637709d51942c59a52c3036b88a719964d))
+
 ## 1.0.0 (2026-01-16)
 
 
