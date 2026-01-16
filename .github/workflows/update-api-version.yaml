@@ -15,7 +15,7 @@ jobs:
       - name: Extract latest version from CHANGELOG.md
         id: get_version
         run: |
-          VERSION=$(grep -oP '##\s+\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
+          VERSION=$(grep -oP '##\s+\[?\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Update version in cmd/api/main.go
