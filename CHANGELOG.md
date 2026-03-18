@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.2...v1.1.0) (2026-03-18)
+
+
+### Features
+
+* add Dockerfile for building and running the API ([e27dbd3](https://github.com/samuel032khoury/gopherfeed/commit/e27dbd3dd5e7a6d2e7a5922dd2386e01d6abbfd6))
+
 ## [1.0.2](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.1...v1.0.2) (2026-01-16)
 
 
