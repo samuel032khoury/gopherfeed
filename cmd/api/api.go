@@ -114,9 +114,20 @@ func (app *application) mount() http.Handler {
 		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)
 		r.With(app.BasicAuthMiddleware).Get("/stats", expvar.Handler().ServeHTTP)
 
-		r.Get("/swagger/*", httpSwagger.Handler(
-			httpSwagger.URL("http://"+app.config.addr+"/v1/swagger/doc.json"),
-		))
+		r.Get("/swagger/*", func(w http.ResponseWriter, r *http.Request) {
+			// Derive the public host from the incoming request so Swagger UI
+			// works correctly both locally and on Cloud Run (where
+			// app.config.addr is just ":8080" and has no hostname).
+			scheme := "http"
+			if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+				scheme = "https"
+			}
+			docs.SwaggerInfo.Host = r.Host
+			docs.SwaggerInfo.Schemes = []string{scheme}
+			httpSwagger.Handler(
+				httpSwagger.URL(scheme+"://"+r.Host+"/v1/swagger/doc.json"),
+			).ServeHTTP(w, r)
+		})
 		r.Route("/posts", func(r chi.Router) {
 			r.Use(app.TokenAuthMiddleware)
 			r.Post("/", app.createPostHandler)
