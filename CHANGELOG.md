@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/samuel032khoury/gopherfeed/compare/v1.2.0...v1.3.0) (2026-03-19)
+
+
+### Features
+
+* add step to create stub web/dist for go:embed in audit workflow ([9337dcd](https://github.com/samuel032khoury/gopherfeed/commit/9337dcd24ed3854d78ec7ff11c23c87eae8c434c))
+* enhance Dockerfile and API to serve frontend assets and update CORS settings ([395ccc2](https://github.com/samuel032khoury/gopherfeed/commit/395ccc225e4999489627436893caf593b9bad9bd))
+
+
+### Bug Fixes
+
+* update Swagger handler to derive public host dynamically ([70c1946](https://github.com/samuel032khoury/gopherfeed/commit/70c19468495ba4bc5e6a170a8513b968dc865fed))
+
 ## [1.2.0](https://github.com/samuel032khoury/gopherfeed/compare/v1.1.0...v1.2.0) (2026-03-19)
 
 
