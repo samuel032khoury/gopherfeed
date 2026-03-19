@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/samuel032khoury/gopherfeed/compare/v1.1.0...v1.2.0) (2026-03-19)
+
+
+### Features
+
+* add Dockerfile for building and running the worker ([22ae28a](https://github.com/samuel032khoury/gopherfeed/commit/22ae28ac157509cf433dd5128edc6378cf36befe))
+
+
+### Bug Fixes
+
+* add health check endpoint to worker ([73ff364](https://github.com/samuel032khoury/gopherfeed/commit/73ff3645e9ceb7f95ae2d759ffb8f7f11a87a4c8))
+
 ## [1.1.0](https://github.com/samuel032khoury/gopherfeed/compare/v1.0.2...v1.1.0) (2026-03-18)
 
 
