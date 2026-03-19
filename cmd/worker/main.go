@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,6 +19,18 @@ func main() {
 	defer logger.Sync()
 
 	logger.Info("Starting email worker...")
+
+	go func() {
+		port := env.GetString("PORT", "8080")
+		mux := http.NewServeMux()
+		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		if err := http.ListenAndServe(":"+port, mux); err != nil && err != http.ErrServerClosed {
+			logger.Errorw("health-check server error", "error", err)
+		}
+	}()
+
 	mqConfig := rabbitmqConfig{
 		url:       env.GetString("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 		queueName: env.GetString("RABBITMQ_EMAIL_QUEUE", "email_queue"),
