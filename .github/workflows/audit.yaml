@@ -21,6 +21,9 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
+      - name: Create stub web/dist for go:embed
+        run: mkdir -p cmd/api/web/dist && echo '<!doctype html>' > cmd/api/web/dist/index.html
+
       - name: Build
         run: go build -v ./...
 
