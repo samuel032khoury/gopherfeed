@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"expvar"
+	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,7 +37,7 @@ type application struct {
 
 type config struct {
 	addr            string
-	frontendBaseURL string
+	frontendBaseURL string // used for email activation links
 	db              dbConfig
 	cache           cacheConfig
 	mq              mqConfig
@@ -92,12 +94,14 @@ type ratelimiterConfig struct {
 func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
+	// Frontend is served from the same origin, so CORS is not strictly needed.
+	// Using "*" keeps the middleware in place for any future external clients.
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{app.config.frontendBaseURL},
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true, // Allow cookies to be sent
+		AllowCredentials: false,
 		MaxAge:           300,
 	}))
 
@@ -109,6 +113,28 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(app.RateLimitMiddleware)
+
+	// Serve compiled frontend static assets from the embedded web/dist.
+	// /v1/* routes (registered below) take priority over this handler.
+	distFS, err := fs.Sub(webFS, "web/dist")
+	if err != nil {
+		panic("embedded web/dist not found: " + err.Error())
+	}
+	fileServer := http.FileServer(http.FS(distFS))
+	r.Get("/*", func(w http.ResponseWriter, req *http.Request) {
+		// Try to serve the file directly; fall back to index.html for SPA routing.
+		f, err := distFS.Open(req.URL.Path)
+		if err != nil {
+			// Path not found in dist — serve index.html for client-side routing.
+			index, _ := distFS.Open("index.html")
+			defer index.Close()
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			io.Copy(w, index) //nolint:errcheck
+			return
+		}
+		f.Close()
+		fileServer.ServeHTTP(w, req)
+	})
 
 	r.Route("/v1", func(r chi.Router) {
 		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)

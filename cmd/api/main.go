@@ -143,7 +143,7 @@ func main() {
 func loadConfig() config {
 	return config{
 		addr:            env.GetString("ADDR", ":8080"),
-		frontendBaseURL: env.GetString("FRONTEND_BASE_URL", "localhost:5173"),
+		frontendBaseURL: env.GetString("FRONTEND_BASE_URL", ""),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://user:password@localhost:5432/gopherfeed?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
