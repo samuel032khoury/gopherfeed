@@ -1,12 +1,12 @@
 name: Audit
-on: 
+on:
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
-jobs: 
+jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
@@ -16,13 +16,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.25'
+          go-version: "1.25"
 
       - name: Verify dependencies
         run: go mod verify
-
-      - name: Create stub web/dist for go:embed
-        run: mkdir -p cmd/api/web/dist && echo '<!doctype html>' > cmd/api/web/dist/index.html
 
       - name: Build
         run: go build -v ./...
